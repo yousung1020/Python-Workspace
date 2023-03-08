@@ -1,1 +1,1 @@
-# :book: Python 스터디 Repo!
+# :book: My Python Workspace for study and personal-project!
