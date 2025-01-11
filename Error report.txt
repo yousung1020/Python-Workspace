@@ -1,0 +1,23 @@
+Couldn't find a tree builder with the features you requested: lxml. Do you need to install a parser library? 오류가 발생하였습니다.
+Couldn't find a tree builder with the features you requested: lxml. Do you need to install a parser library? 오류가 발생하였습니다.
+invalid literal for int() with base 10: '\n\n                                            일반공지\n                                        \n' 오류가 발생하였습니다.
+invalid literal for int() with base 10: '\n\n                                            일반공지\n                                        \n' 오류가 발생하였습니다.
+invalid literal for int() with base 10: '\n\n                                            일반공지\n                                        \n' 오류가 발생하였습니다.
+invalid literal for int() with base 10: '\n\n일반공지\n\n' 오류가 발생하였습니다.
+can only concatenate str (not "int") to str 오류가 발생하였습니다.
+invalid literal for int() with base 10: '\n\n                                            일반공지\n                                        \n' 오류가 발생하였습니다.
+invalid literal for int() with base 10: '' 오류가 발생하였습니다.
+can only concatenate str (not "int") to str 오류가 발생하였습니다.
+int() argument must be a string, a bytes-like object or a real number, not 'NoneType' 오류가 발생하였습니다.
+can only concatenate str (not "int") to str 오류가 발생하였습니다.
+can only concatenate str (not "int") to str 오류가 발생하였습니다.
+can only concatenate str (not "int") to str 오류가 발생하였습니다.
+'str' object has no attribute 'pop' 오류가 발생하였습니다.
+can only concatenate str (not "list") to str 오류가 발생하였습니다.
+ResultSet object has no attribute 'get_text'. You're probably treating a list of elements like a single element. Did you call find_all() when you meant to call find()? 오류가 발생하였습니다.
+can only concatenate str (not "ResultSet") to str 오류가 발생하였습니다.
+can only concatenate str (not "Tag") to str 오류가 발생하였습니다.
+can only concatenate list (not "int") to list 오류가 발생하였습니다.
+can only concatenate list (not "int") to list 오류가 발생하였습니다.
+can only concatenate list (not "int") to list 오류가 발생하였습니다.
+can only concatenate list (not "int") to list 오류가 발생하였습니다.

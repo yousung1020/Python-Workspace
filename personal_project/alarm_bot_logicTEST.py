@@ -17,7 +17,7 @@ async def fetch(session, url):
 
 # 대학 공지에 대한 비동기 함수
 async def univer_notice():
-    channel = clt.get_channel(1042426467931398215) # 테스트 채널 id
+    channel = clt.get_channel() # 테스트 채널 id
     while True:
         async with aiohttp.ClientSession() as session:
                 html_info = await fetch(session, 'https://www.dongyang.ac.kr/dongyang/129/subview.do')
@@ -69,13 +69,15 @@ async def univer_notice():
 
 # 학과 공지에 대한 비동기 함수
 async def major_notice():
-    channel = clt.get_channel(1042426467931398215) # 테스트 채널 id
+    channel = clt.get_channel() # 테스트 채널 id
     while True:
         async with aiohttp.ClientSession() as session:
                 html_info = await fetch(session, 'https://www.dongyang.ac.kr/dmu_23218/1776/subview.do')
                 soup_major = BeautifulSoup(html_info, 'lxml')
-                major_num = soup_major.find('td', attrs={'class':"td-num"}).get_text()
-                major_num = int(major_num)
+                major_num = soup_major.find_all('tr', attrs={'class':""})
+                major_num.pop(0)
+                major_num = int(major_num[0].find().get_text().replace(" ", "").replace("\n", ""))
+                
                 now = datetime.now()
 
                 while True:
@@ -84,7 +86,9 @@ async def major_notice():
                     major_num_compared = soup_major_compared.find_all('tr', attrs={'class':''})
                     major_num_compared.pop(0)
                     major_num_compared = major_num_compared[0].find().get_text()
-                    major_num_compared = int(major_num_compared)
+                    major_num_compared = int(major_num_compared.replace(" ", "").replace("\n", ""))
+                    
+
                     now = datetime.now()
 
                     print("-------------------------------------------------------------------------------------")
@@ -124,7 +128,7 @@ async def major_notice():
 
 @clt.event
 async def on_ready():
-    channel = clt.get_channel(1042426467931398215) # 테스트 채널 id
+    channel = clt.get_channel() # 테스트 채널 id
     await channel.send("봇 준비 완료!")
     await clt.change_presence(status=discord.Status.online)
     await asyncio.sleep(3.0)
