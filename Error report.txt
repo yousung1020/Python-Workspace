@@ -21,3 +21,15 @@ can only concatenate list (not "int") to list 오류가 발생하였습니다.
 can only concatenate list (not "int") to list 오류가 발생하였습니다.
 can only concatenate list (not "int") to list 오류가 발생하였습니다.
 can only concatenate list (not "int") to list 오류가 발생하였습니다.
+invalid literal for int() with base 10: '등록된게시글이없습니다.' 오류가 발생하였습니다.
+invalid literal for int() with base 10: '등록된게시글이없습니다.' 오류가 발생하였습니다.
+invalid literal for int() with base 10: '등록된게시글이없습니다.' 오류가 발생하였습니다.
+invalid literal for int() with base 10: '등록된게시글이없습니다.' 오류가 발생하였습니다.
+can only concatenate str (not "ResultSet") to str 오류가 발생하였습니다.
+can only concatenate str (not "ResultSet") to str 오류가 발생하였습니다.
+invalid literal for int() with base 10: '등록된게시글이없습니다.' 오류가 발생하였습니다.
+invalid literal for int() with base 10: '410[학부]2025년지역인재7급수습직원선발시험관련학생추천신청안내한혜원2025.01.03690' 오류가 발생하였습니다.
+'NoneType' object has no attribute 'get_text' 오류가 발생하였습니다.
+'NoneType' object is not subscriptable 오류가 발생하였습니다.
+'NoneType' object is not subscriptable 오류가 발생하였습니다.
+'NoneType' object has no attribute 'send' 오류가 발생하였습니다.
