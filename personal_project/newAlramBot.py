@@ -92,7 +92,7 @@ async def major_notice_CSE(channels):
                     now = datetime.now()
 
                     print("-------------------------------------------------------------------------------------")
-                    print("현재 major_num 값과 major_num_compared 값\n" + str(major_num), "||", major_num_compared, "||",now)
+                    print("현재 컴소과 major_num 값과 major_num_compared 값\n" + str(major_num), "||", major_num_compared, "||",now)
                     print("-------------------------------------------------------------------------------------\n")
 
                     if (major_num_compared == major_num + 1):
@@ -122,7 +122,7 @@ async def major_notice_CSE(channels):
                     
                     elif (major_num_compared == major_num - 1):
                         with open("removed notice.txt", "a+", encoding="utf8") as report_file:
-                            report_file.write("학과 공지가 삭제 되었음" + "\n")
+                            report_file.write("컴소과 학과 공지가 삭제 되었음" + "\n")
 
                         for channel in channels:
                             await channel.send("학과 공지가 삭제되었음\n")
@@ -153,7 +153,7 @@ async def major_notice_ICE(channels):
                     now = datetime.now()
 
                     print("-------------------------------------------------------------------------------------")
-                    print("현재 major_num 값과 major_num_compared 값\n" + str(major_num), "||", major_num_compared, "||",now)
+                    print("현재 정통과 major_num 값과 major_num_compared 값\n" + str(major_num), "||", major_num_compared, "||",now)
                     print("-------------------------------------------------------------------------------------\n")
 
                     if (major_num_compared == major_num + 1):
@@ -181,7 +181,7 @@ async def major_notice_ICE(channels):
                     
                     elif (major_num_compared == major_num - 1):
                         with open("removed notice.txt", "a+", encoding="utf8") as report_file:
-                            report_file.write("학과 공지가 삭제 되었음" + "\n")
+                            report_file.write("정통과 학과 공지가 삭제 되었음" + "\n")
 
                         for channel in channels:
                             await channel.send("학과 공지가 삭제되었음\n")
