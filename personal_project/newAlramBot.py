@@ -21,19 +21,6 @@ logger.addHandler(handler)
 token = ''
 clt = discord.Client(intents=discord.Intents.default())
 
-# 저녁 10시부터 6시까지 코드가 멈추게끔 하는 함수
-async def pause_night():
-    while True:
-        now = datetime.now().time()
-        if time(22, 0) <= now or now <= time(6, 0):
-            print("밤 10시부터 아침 6시까지 동작이 중지됩니다.")
-            logger.info("밤 10시이므로 잠 자러 감")
-            await asyncio.sleep(60 * 60 * 8 + 5) # 8시간 동안 중지
-            print("아침 6시가 되었으므로 코드가 재개되었습니다.")
-            logger.info("아침 6시이므로 일을 시작함")
-        else:
-            break
-
 # 비동기식 request에서 session을 받고 반환하는 함수
 # 추가: 세션 연결에 실패하였을 경우 세 번을 더 세션 연결을 시도함
 async def fetch(session, url):
