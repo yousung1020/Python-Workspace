@@ -249,7 +249,6 @@ async def on_ready():
         print("해당 오류가 발생한 시간:", now)
         print("해당 오류가 발생한 위치:")
         traceback.print_exc()
-        with open("Error report.txt", "a+", encoding="utf8") as error_report:
-            error_report.write(str(err_msg) + " 오류가 발생하였습니다." + "\n" )
+        logger.info(f"{err_msg} 오류가 발생하였습니다.")
 
 clt.run(token)
