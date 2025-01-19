@@ -1,24 +1,55 @@
+import logging
+from logging.handlers import TimedRotatingFileHandler
 from multiprocessing.connection import Client
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, time
 import discord
 import re
 import aiohttp
 import asyncio
 import traceback
 
+# 로깅 사전 설정
+logger = logging.getLogger("alarm_bot") # logger 객체 생성
+logger.setLevel(logging.INFO) # 로그 레벨 설정
+handler = TimedRotatingFileHandler("alarm_bot.log", when="midnight", interval=1, backupCount=5, encoding="utf-8") # time rotate handler 설정
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s') # 로그 포맷팅
+handler.setFormatter(formatter)
+logger.addHandler(handler) 
+
 # push 할 때는 꼭 토큰 삭제하기!
 token = ''
 clt = discord.Client(intents=discord.Intents.default())
 
+# 저녁 10시부터 6시까지 코드가 멈추게끔 하는 함수
+async def pause_night():
+    while True:
+        now = datetime.now().time()
+        if time(22, 0) <= now or now <= time(6, 0):
+            print("밤 10시부터 아침 6시까지 동작이 중지됩니다.")
+            logger.info("밤 10시가 되었으므로 코드가 중지됨")
+            await asyncio.sleep(60 * 60 * 8 + 5) # 8시간 동안 중지
+            print("아침 6시가 되었으므로 코드가 재개되었습니다.")
+        else:
+            break
+
 # 비동기식 request에서 session을 받고 반환하는 함수
+# 추가: 세션 연결에 실패하였을 경우 세 번을 더 세션 연결을 시도함
 async def fetch(session, url):
-    async with session.get(url) as responce:
-        return await responce.text()
+    for attempt in range(3):
+        try:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as responce:
+                return await responce.text()
+        except aiohttp.ClientConnectorError as err:
+            logger.error(f"연결 오류가 발생하였습니다. : {err} (재시도: {attempt + 1} / 3)")
+            asyncio.sleep(3)
+    raise Exception("세션 연결에 실패하였습니다.")
+        
 
 # 대학 공지에 대한 비동기 함수
 async def univer_notice(channels):
     while True:
+        await pause_night()
         async with aiohttp.ClientSession() as session:
                 html_info = await fetch(session, 'https://www.dongyang.ac.kr/dongyang/129/subview.do')
                 soup_univer = BeautifulSoup(html_info, 'lxml')
@@ -39,6 +70,7 @@ async def univer_notice(channels):
                     print("-------------------------------------------------------------------------------------")
                     print("현재 univer_num 값과 univer_num_compared 값\n" + str(univer_num), "||", univer_num_compared, "||",now)
                     print("-------------------------------------------------------------------------------------\n")
+                    logger.info(f"현재 univer_num 값과 univer_num_compared 값\n{univer_num} || {univer_num_compared}")
 
                     if (univer_num_compared == univer_num + 1):
                         # 대학 공지 제목 추출
@@ -66,11 +98,12 @@ async def univer_notice(channels):
                             await channel.send("대학 공지가 삭제되었음\n")
                         break
                         
-                    await asyncio.sleep(10.0)
+                    await asyncio.sleep(30.0)
 
 # 학과 공지(컴소과)에 대한 비동기 함수
 async def major_notice_CSE(channels):
     while True:
+        await pause_night()
         async with aiohttp.ClientSession() as session:
                 html_info = await fetch(session, 'http://www.dmu.ac.kr/dmu_23222/1797/subview.do')
                 soup_major = BeautifulSoup(html_info, 'lxml')
@@ -94,6 +127,7 @@ async def major_notice_CSE(channels):
                     print("-------------------------------------------------------------------------------------")
                     print("현재 컴소과 major_num 값과 major_num_compared 값\n" + str(major_num), "||", major_num_compared, "||",now)
                     print("-------------------------------------------------------------------------------------\n")
+                    logger.info(f"현재 major_num 값과 major_num_compared 값\n{major_num} || {major_num}")
 
                     if (major_num_compared == major_num + 1):
                         # 학과 공지 제목 추출
@@ -128,11 +162,12 @@ async def major_notice_CSE(channels):
                             await channel.send("학과 공지가 삭제되었음\n")
                         break
 
-                    await asyncio.sleep(10.0)
+                    await asyncio.sleep(30.0)
 
 # 학과 공지(정통과)에 대한 비동기 함수
 async def major_notice_ICE(channels):
     while True:
+        await pause_night()
         async with aiohttp.ClientSession() as session:
                 html_info = await fetch(session, 'https://www.dongyang.ac.kr/dmu_23218/1776/subview.do')
                 soup_major = BeautifulSoup(html_info, 'lxml')
@@ -155,6 +190,7 @@ async def major_notice_ICE(channels):
                     print("-------------------------------------------------------------------------------------")
                     print("현재 정통과 major_num 값과 major_num_compared 값\n" + str(major_num), "||", major_num_compared, "||",now)
                     print("-------------------------------------------------------------------------------------\n")
+                    logger.info(f"현재 major_num 값과 major_num_compared 값\n{major_num} || {major_num_compared}")
 
                     if (major_num_compared == major_num + 1):
                         # 학과 공지 제목 추출
@@ -188,7 +224,7 @@ async def major_notice_ICE(channels):
 
                         break
 
-                    await asyncio.sleep(10.0)
+                    await asyncio.sleep(30.0)
 
 @clt.event
 async def on_ready():
