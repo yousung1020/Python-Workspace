@@ -37,14 +37,24 @@ async def pause_night():
 
 # 비동기식 request에서 session을 받고 반환하는 함수
 # 추가: 세션 연결에 실패하였을 경우 세 번을 더 세션 연결을 시도함
-async def fetch(session, url):
-    for attempt in range(3):
+async def fetch(session, url, channels):
+    for attempt in range(5):
         try:
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as responce:
                 return await responce.text()
+            
         except aiohttp.ClientConnectorError as err:
             logger.error(f"연결 오류가 발생하였습니다. : {err} (재시도: {attempt + 1} / 3)")
-            asyncio.sleep(5)
+            for channel in channels:
+                channel.send(f"연결 오류가 발생하였습니다. : {err} (재시도: {attempt + 1} / 3)")
+            asyncio.sleep(30)
+        
+        except asyncio.TimeoutError as err:
+            logger.error(f"타임아웃 오류가 발생하였습니다. : {err} (재시도: {attempt + 1} / 3)")
+            for channel in channels:
+                channel.send(f"타임아웃 오류가 발생하였습니다. : {err} (재시도: {attempt + 1} / 3)")
+            asyncio.sleep(30)
+
     raise Exception("세션 연결에 실패하였습니다.")
 
 
@@ -52,7 +62,7 @@ async def fetch(session, url):
 async def univer_notice(channels):
     while True:
         async with aiohttp.ClientSession() as session:
-                html_info = await fetch(session, 'https://www.dongyang.ac.kr/dongyang/129/subview.do')
+                html_info = await fetch(session, 'https://www.dongyang.ac.kr/dongyang/129/subview.do', channels)
                 soup_univer = BeautifulSoup(html_info, 'lxml')
                 univer_num = soup_univer.find_all('tr', attrs={'class':''})
                 univer_num.pop(0)
@@ -61,7 +71,7 @@ async def univer_notice(channels):
 
                 while True:
                     await pause_night()
-                    html_info_compared = await fetch(session, 'https://www.dongyang.ac.kr/dongyang/129/subview.do')
+                    html_info_compared = await fetch(session, 'https://www.dongyang.ac.kr/dongyang/129/subview.do', channels)
                     soup_univer_compared = BeautifulSoup(html_info_compared, 'lxml')
                     univer_num_compared = soup_univer_compared.find_all('tr', attrs={'class':''})
                     univer_num_compared.pop(0)
@@ -99,13 +109,13 @@ async def univer_notice(channels):
                             await channel.send("대학 공지가 삭제되었음\n")
                         break
                         
-                    await asyncio.sleep(30.0)
+                    await asyncio.sleep(120.0)
 
 # 학과 공지(컴소과)에 대한 비동기 함수
 async def major_notice_CSE(channels):
     while True:
         async with aiohttp.ClientSession() as session:
-                html_info = await fetch(session, 'http://www.dmu.ac.kr/dmu_23222/1797/subview.do')
+                html_info = await fetch(session, 'http://www.dmu.ac.kr/dmu_23222/1797/subview.do', channels)
                 soup_major = BeautifulSoup(html_info, 'lxml')
                 major_num = soup_major.find_all('tr', attrs={'class':""})
                 major_num.pop(0)
@@ -115,14 +125,13 @@ async def major_notice_CSE(channels):
 
                 while True:
                     await pause_night()
-                    html_info_compared = await fetch(session, 'http://www.dmu.ac.kr/dmu_23222/1797/subview.do')
+                    html_info_compared = await fetch(session, 'http://www.dmu.ac.kr/dmu_23222/1797/subview.do', channels)
                     soup_major_compared = BeautifulSoup(html_info_compared, 'lxml')
                     major_num_compared = soup_major_compared.find_all('tr', attrs={'class':''})
                     major_num_compared.pop(0)
                     major_num_compared.pop(0)
                     major_num_compared = int(major_num_compared[0].find("td", class_="td-num").get_text().replace(" ", "").replace("\n", ""))
                     
-
                     now = datetime.now()
 
                     print("-------------------------------------------------------------------------------------")
@@ -160,15 +169,16 @@ async def major_notice_CSE(channels):
 
                         for channel in channels:
                             await channel.send("학과 공지가 삭제되었음\n")
+
                         break
 
-                    await asyncio.sleep(30.0)
+                    await asyncio.sleep(120.0)
 
 # 학과 공지(정통과)에 대한 비동기 함수
 async def major_notice_ICE(channels):
     while True:
         async with aiohttp.ClientSession() as session:
-                html_info = await fetch(session, 'https://www.dongyang.ac.kr/dmu_23218/1776/subview.do')
+                html_info = await fetch(session, 'https://www.dongyang.ac.kr/dmu_23218/1776/subview.do', channels)
                 soup_major = BeautifulSoup(html_info, 'lxml')
                 major_num = soup_major.find_all('tr', attrs={'class':""})
                 major_num.pop(0)
@@ -178,7 +188,7 @@ async def major_notice_ICE(channels):
 
                 while True:
                     await pause_night()
-                    html_info_compared = await fetch(session, 'https://www.dongyang.ac.kr/dmu_23218/1776/subview.do')
+                    html_info_compared = await fetch(session, 'https://www.dongyang.ac.kr/dmu_23218/1776/subview.do', channels)
                     soup_major_compared = BeautifulSoup(html_info_compared, 'lxml')
                     major_num_compared = soup_major_compared.find_all('tr', attrs={'class':''})
                     major_num_compared.pop(0)
@@ -223,7 +233,7 @@ async def major_notice_ICE(channels):
 
                         break
 
-                    await asyncio.sleep(30.0)
+                    await asyncio.sleep(120.0)
 
 @clt.event
 async def on_ready():
@@ -238,7 +248,11 @@ async def on_ready():
     await clt.change_presence(status=discord.Status.online)
     await asyncio.sleep(3.0)
     try:
-        await asyncio.gather(univer_notice(channelIds_univer), major_notice_CSE(channelIds_CSE), major_notice_ICE(channelIds_ICE))
+        await asyncio.gather(univer_notice(channelIds_univer), 
+                            asyncio.sleep(0.5),
+                            major_notice_CSE(channelIds_CSE), 
+                            asyncio.sleep(0.5),
+                            major_notice_ICE(channelIds_ICE))
 
     except Exception as err_msg:
         pass
