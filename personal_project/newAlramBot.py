@@ -44,15 +44,15 @@ async def fetch(session, url, channels):
                 return await responce.text()
             
         except aiohttp.ClientConnectorError as err:
-            logger.error(f"연결 오류가 발생하였습니다. : {err} (재시도: {attempt + 1} / 3)")
+            logger.error(f"연결 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)")
             for channel in channels:
-                channel.send(f"연결 오류가 발생하였습니다. : {err} (재시도: {attempt + 1} / 3)")
+                channel.send(f"연결 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)")
             asyncio.sleep(30)
         
         except asyncio.TimeoutError as err:
-            logger.error(f"타임아웃 오류가 발생하였습니다. : {err} (재시도: {attempt + 1} / 3)")
+            logger.error(f"타임아웃 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)")
             for channel in channels:
-                channel.send(f"타임아웃 오류가 발생하였습니다. : {err} (재시도: {attempt + 1} / 3)")
+                channel.send(f"타임아웃 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)")
             asyncio.sleep(30)
 
     raise Exception("세션 연결에 실패하였습니다.")
@@ -257,7 +257,7 @@ async def on_ready():
     except Exception as err_msg:
         pass
         now = datetime.now()
-        await channelId_forTEST.send("홀리쒯, 오류가 발생하였네요!!! 호다닥 확인을 해야겠죠?\n")
+        await channelId_forTEST.send(f"홀리쒯, 오류가 발생하였네요!!! 호다닥 확인을 해야겠죠?\n 힌트!: {str(err_msg)}")
         print("오류가 발생하였습니다. 오류 메세지는 다음과 같습니다.\n" + str(err_msg))
         print("해당 오류가 발생한 시간:", now)
         print("해당 오류가 발생한 위치:")
