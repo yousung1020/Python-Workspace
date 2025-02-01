@@ -10,3 +10,7 @@ async def test():
 
 print(now)
 asyncio.run(test())
+ZeroDivision
+dda
+dsa
+dsadsa
