@@ -47,13 +47,13 @@ async def fetch(session, url, channels, name):
             logger.error(f"연결 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name}")
             for channel in channels:
                 await channel.send(f"연결 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name}")
-            asyncio.sleep(30)
+            await asyncio.sleep(30)
         
         except asyncio.TimeoutError as err:
             logger.error(f"타임아웃 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name}")
             for channel in channels:
                 await channel.send(f"타임아웃 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name}")
-            asyncio.sleep(30)
+            await asyncio.sleep(30)
 
     raise Exception("세션 연결에 실패하였습니다.")
 
