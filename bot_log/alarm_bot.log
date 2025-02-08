@@ -1,27 +1,10 @@
-2025-01-21 04:27:24,952 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
-410 || 410
-2025-01-21 04:27:25,382 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
-829 || 829
-2025-01-21 04:27:25,580 - INFO - 현재 univer_num 값과 univer_num_compared 값
-4755 || 4755
-2025-01-21 04:29:15,142 - INFO - 밤 10시이므로 잠 자러 감
-2025-01-21 04:29:15,363 - INFO - 밤 10시이므로 잠 자러 감
-2025-01-21 04:29:15,786 - INFO - 밤 10시이므로 잠 자러 감
-2025-02-02 21:34:33,993 - INFO - Couldn't find a tree builder with the features you requested: lxml. Do you need to install a parser library? 오류가 발생하였습니다.
-2025-02-02 21:34:33,993 - ERROR - TraceBack 정보: 
- Traceback (most recent call last):
-  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 257, in on_ready
-    await asyncio.gather(univer_notice(channelIds_univer),
-  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 122, in major_notice_CSE
-    soup_major = BeautifulSoup(html_info, 'lxml')
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\choiy\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\bs4\__init__.py", line 250, in __init__
-    raise FeatureNotFound(
-bs4.FeatureNotFound: Couldn't find a tree builder with the features you requested: lxml. Do you need to install a parser library?
-
-2025-02-02 21:35:16,354 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
-410 || 410
-2025-02-02 21:35:16,489 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+2025-02-08 14:33:19,963 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-08 14:33:20,255 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
 831 || 831
-2025-02-02 21:35:16,670 - INFO - 현재 univer_num 값과 univer_num_compared 값
-4767 || 4767
+2025-02-08 14:33:20,715 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-08 14:33:27,648 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-08 14:33:35,138 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411

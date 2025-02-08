@@ -1,0 +1,294 @@
+2025-02-07 20:22:55,839 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 20:22:55,889 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:22:56,058 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 20:23:42,699 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 20:23:42,733 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:23:42,917 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 20:23:43,376 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:23:44,055 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:23:44,671 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:23:45,298 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:23:45,939 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:27:36,517 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 20:27:36,559 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:27:36,593 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 20:27:37,273 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:27:37,877 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:27:38,530 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:27:39,214 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:27:39,881 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:29:14,944 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:29:14,961 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 20:29:15,123 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 20:29:15,564 - INFO - 'NoneType' object has no attribute 'get_text' 오류가 발생하였습니다.
+2025-02-07 20:29:15,564 - ERROR - TraceBack 정보: 
+ Traceback (most recent call last):
+  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 318, in on_ready
+    await asyncio.gather(univer_notice(channelIds_univer),
+  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 281, in major_notice_ICE
+    title_raw_major = title_major[i].find('strong').get_text()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get_text'
+
+2025-02-07 20:35:51,131 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 20:35:51,216 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:35:51,386 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 20:35:51,853 - INFO - string indices must be integers, not 'str' 오류가 발생하였습니다.
+2025-02-07 20:35:51,854 - ERROR - TraceBack 정보: 
+ Traceback (most recent call last):
+  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 334, in on_ready
+    await asyncio.gather(univer_notice(channelIds_univer),
+  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 300, in major_notice_ICE
+    a1 = title_major[i].find('a')
+         ~~~~~~~~~~~^^^
+TypeError: string indices must be integers, not 'str'
+
+2025-02-07 20:50:05,979 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 20:50:06,117 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:50:06,198 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 20:50:09,629 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:50:12,972 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:50:16,533 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:50:19,879 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:53:10,416 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 20:53:10,586 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 20:53:10,657 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 20:53:11,255 - INFO - 0 오류가 발생하였습니다.
+2025-02-07 20:53:11,255 - ERROR - TraceBack 정보: 
+ Traceback (most recent call last):
+  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 339, in on_ready
+    await asyncio.gather(univer_notice(channelIds_univer),
+  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 294, in major_notice_ICE
+    title_major_raw = soup_major_compared[i].find('td', attrs={'class':'td-subject'})
+                      ~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\choiy\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\bs4\element.py", line 1573, in __getitem__
+    return self.attrs[key]
+           ~~~~~~~~~~^^^^^
+KeyError: 0
+
+2025-02-07 21:36:07,823 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 21:36:07,841 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:36:07,970 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 21:36:08,481 - INFO - list indices must be integers or slices, not str 오류가 발생하였습니다.
+2025-02-07 21:36:08,481 - ERROR - TraceBack 정보: 
+ Traceback (most recent call last):
+  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 340, in on_ready
+    await asyncio.gather(univer_notice(channelIds_univer),
+  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 305, in major_notice_ICE
+    a = tr2[i].find('a')
+        ~~~^^^
+TypeError: list indices must be integers or slices, not str
+
+2025-02-07 21:37:55,303 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 21:37:55,386 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:37:55,547 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 21:37:56,142 - INFO - list indices must be integers or slices, not str 오류가 발생하였습니다.
+2025-02-07 21:37:56,142 - ERROR - TraceBack 정보: 
+ Traceback (most recent call last):
+  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 340, in on_ready
+    await asyncio.gather(univer_notice(channelIds_univer),
+  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 305, in major_notice_ICE
+    a = tr2[i].find('a')
+        ~~~^^^
+TypeError: list indices must be integers or slices, not str
+
+2025-02-07 21:39:10,326 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 21:39:10,389 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:39:10,477 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 21:39:13,643 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:39:16,988 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:39:20,343 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:39:23,725 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:39:27,325 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:40:27,565 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 21:40:27,677 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:40:27,784 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 21:42:02,452 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 21:42:02,514 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:42:02,548 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 21:44:19,849 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 21:44:19,903 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:44:19,935 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 21:44:23,346 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:46:50,881 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 21:46:51,107 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:46:51,158 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 21:46:51,692 - INFO - Messageable.send() takes from 1 to 2 positional arguments but 3 were given 오류가 발생하였습니다.
+2025-02-07 21:46:51,692 - ERROR - TraceBack 정보: 
+ Traceback (most recent call last):
+  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 340, in on_ready
+    await asyncio.gather(univer_notice(channelIds_univer),
+  File "C:\Users\choiy\Desktop\Python-Workspace\personal_project\newAlramBot.py", line 311, in major_notice_ICE
+    await channel.send("\n\n", banner_major + title_major + link2)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Messageable.send() takes from 1 to 2 positional arguments but 3 were given
+
+2025-02-07 21:47:33,202 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:47:33,226 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 21:47:33,313 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 21:47:36,691 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:47:39,969 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:50:15,402 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 21:50:15,461 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:50:15,503 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 21:50:18,826 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:53:10,333 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 21:53:10,532 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:53:10,615 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 21:53:18,877 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:56:34,291 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 21:56:34,360 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 21:56:34,369 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:56:42,595 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 21:56:50,818 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:00:26,786 - INFO - 밤 10시이므로 잠 자러 감
+2025-02-07 22:00:26,853 - INFO - 밤 10시이므로 잠 자러 감
+2025-02-07 22:00:26,892 - INFO - 밤 10시이므로 잠 자러 감
+2025-02-07 22:02:08,156 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:02:08,194 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 22:02:08,269 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 22:02:48,471 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:02:48,506 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 22:02:48,590 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 22:03:28,194 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 22:03:28,326 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:03:28,365 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 22:04:09,753 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 22:04:09,818 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:04:09,926 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 22:05:55,332 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:05:55,341 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 22:05:55,402 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 22:06:04,198 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:12:55,664 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:12:55,708 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 22:12:55,766 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 22:13:20,469 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 22:13:20,546 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:13:20,613 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 22:16:35,015 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:16:35,028 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 22:16:35,078 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 22:16:38,707 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:16:42,329 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:16:45,907 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:16:49,576 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:18:18,123 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+411 || 411
+2025-02-07 22:18:18,144 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:18:18,229 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4777 || 4777
+2025-02-07 22:18:21,918 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831
+2025-02-07 22:18:25,504 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+831 || 831

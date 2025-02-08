@@ -47,13 +47,13 @@ async def fetch(session, url, channels, name):
             logger.error(f"연결 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name}")
             for channel in channels:
                 await channel.send(f"연결 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name}")
-            await asyncio.sleep(30)
+            await asyncio.sleep(15)
         
         except asyncio.TimeoutError as err:
             logger.error(f"타임아웃 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name}")
             for channel in channels:
                 await channel.send(f"타임아웃 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name}")
-            await asyncio.sleep(30)
+            await asyncio.sleep(15)
 
     raise Exception("세션 연결에 실패하였습니다.")
 
@@ -104,14 +104,54 @@ async def univer_notice(channels):
                         
                         break
                     
-                    elif (univer_num_compared == univer_num - 1):
-                        logger.info("대학 공지가 삭제되었습니다.")
+                    elif(univer_num_compared > univer_num + 1):
+                        target = int(univer_num_compared - univer_num)
+
+                        # 대학 공지 제목 추출
+                        title_univer = soup_univer_compared.find_all('tr', attrs={'class':''})
+                        title_univer.pop(0)
+                        title_raw_univer = title_univer[0].find('strong').get_text()
+                        title_university = f"제목: {title_raw_univer}"
+
+                        # 대학 공지 url 추출
+                        a1 = title_univer[0].find('a')
+                        link1_before = a1['href']
+                        link1_after = f"\nhttps://www.dongyang.ac.kr{link1_before}?layout=unknown \n"
+                        banner_university = "새로운 대학 공지가 올라왔습니다.\n\n"
+
+                        for channel in channels:
+                            await channel.send(banner_university + title_university + link1_after)
+
+                        #-------------------------------------------------------------------------
                         
                         for channel in channels:
-                            await channel.send("대학 공지가 삭제되었음\n")
+                            await channel.send(f"{target-1}개의 건너뛰어진 공지사항이 있습니다.")
+
+                        for i in range(target-1):
+                            title_univer = soup_univer_compared.find_all('tr', attrs={'class':''})
+                            title_univer.pop(0)
+                            title_raw_univer = title_univer[i+1].find('strong').get_text()
+                            title_university = f"제목: {title_raw_univer}"
+
+                            a1 = title_univer[i+1].find('a')
+                            link1_before = a1['href']
+                            link1_after = f"\nhttps://www.dongyang.ac.kr{link1_before}?layout=unknown \n"
+                            banner_university = "새로운 대학 공지가 올라왔습니다.\n\n"
+
+                            for channel in channels:
+                                await channel.send(banner_university + title_university + link1_after)
+                            await asyncio.sleep(1)
+
+                        break
+
+                    elif (univer_num_compared < univer_num):
+                        logger.info(f"{univer_num}번 대학 공지가 삭제되었습니다.")
+                        
+                        for channel in channels:
+                            await channel.send(f"{univer_num}번 대학 공지가 삭제되었습니다\n")
                         break
                         
-                    await asyncio.sleep(120.0)
+                    await asyncio.sleep(60.0)
 
 # 학과 공지(컴소과)에 대한 비동기 함수
 async def major_notice_CSE(channels):
@@ -121,7 +161,6 @@ async def major_notice_CSE(channels):
                 html_info = await fetch(session, 'http://www.dmu.ac.kr/dmu_23222/1797/subview.do', channels, name)
                 soup_major = BeautifulSoup(html_info, 'lxml')
                 major_num = soup_major.find_all('tr', attrs={'class':""})
-                major_num.pop(0)
                 major_num.pop(0)
                 major_num = int(major_num[0].find("td", class_="td-num").get_text().replace(" ", "").replace("\n", ""))
                 now = datetime.now()
@@ -133,7 +172,6 @@ async def major_notice_CSE(channels):
                     soup_major_compared = BeautifulSoup(html_info_compared, 'lxml')
                     major_num_compared = soup_major_compared.find_all('tr', attrs={'class':''})
                     major_num_compared.pop(0)
-                    major_num_compared.pop(0)
                     major_num_compared = int(major_num_compared[0].find("td", class_="td-num").get_text().replace(" ", "").replace("\n", ""))
                     
                     now = datetime.now()
@@ -144,7 +182,32 @@ async def major_notice_CSE(channels):
                     logger.info(f"현재 컴소과 major_num 값과 major_num_compared 값\n{major_num} || {major_num}")
 
                     if (major_num_compared == major_num + 1):
-                        # 학과 공지 제목 추출
+
+                        # 컴소과 공지 제목 추출
+                        title_major_raw = soup_major_compared.find('td', attrs={'class':'td-subject'})
+                        divide = title_major_raw.get_text().split()
+
+                        title_major = '제목: '
+            
+                        for i in divide:
+                            title_major += i + ' '
+
+                        # 학과 공지 url 추출
+                        tr2 = soup_major_compared.find_all('tr', attrs={'class':''})
+                        tr2.pop(0)
+                        a = tr2[0].find('a')
+                        js_splits = re.findall("'([^']*)'", a['href'])
+                        link2 = f"\nhttps://www.dongyang.ac.kr/combBbs/{js_splits[0]}/{js_splits[1]}/{js_splits[3]}/view.do?layout=unknown \n"
+                        banner_major = "새로운 컴소과 공지가 올라왔습니다.\n\n"
+
+                        for channel in channels:
+                            await channel.send(banner_major + title_major + link2)
+
+                        break
+
+                    elif(major_num_compared > major_num - 3):
+                        target = int(major_num_compared - major_num + 3)
+                        # 컴소과 공지 제목 추출
                         title_major_raw = soup_major_compared.find('td', attrs={'class':'td-subject'})
                         divide = title_major_raw.get_text().split()
 
@@ -153,30 +216,60 @@ async def major_notice_CSE(channels):
                         for i in divide:
                             title_major += i + ' '
                     
-                        # 학과 공지 url 추출
+                        # 컴소과 공지 url 추출
                         tr2 = soup_major_compared.find_all('tr', attrs={'class':''})
-                        tr2.pop(0)
                         tr2.pop(0)
                         a = tr2[0].find('a')
                         js_splits = re.findall("'([^']*)'", a['href'])
                         link2 = f"\nhttps://www.dongyang.ac.kr/combBbs/{js_splits[0]}/{js_splits[1]}/{js_splits[3]}/view.do?layout=unknown \n"
-                        banner_major = "새로운 학과 공지가 올라왔습니다.\n\n"
+                        banner_major = "새로운 컴소과 공지가 올라왔습니다.\n\n"
 
                         for channel in channels:
                             await channel.send(banner_major + title_major + link2)
 
+                        # ------------------------------------------------------------
+
+                        for channel in channels:
+                            await channel.send(f"안내: {target-1}개의 건너뛰어진 공지사항이 있습니다.")
+
+                        for i in range(target-1):
+
+                            # 컴소과 공지 제목 추출
+                            title_major_raw = soup_major_compared.find_all('td', attrs={'class':'td-subject'})
+                            del title_major_raw[0]
+                            divide = title_major_raw[i+1].get_text().split()
+
+                            title_major = '제목: '
+            
+                            for j in divide:
+                                title_major += j + ' '
+
+                            # 컴소과 공지 url 추출
+                            tr2 = soup_major_compared.find_all('tr', attrs={'class':''})
+                            tr2.pop(0)
+                            a = tr2[i+1].find('a')
+                            js_splits = re.findall("'([^']*)'", a['href'])
+                            link2 = f"\nhttps://www.dongyang.ac.kr/combBbs/{js_splits[0]}/{js_splits[1]}/{js_splits[3]}/view.do?layout=unknown \n"
+                            banner_major = f"{i+1}.\n"
+
+                            for channel in channels:
+                                await channel.send(banner_major + title_major + link2)
+
+                            await asyncio.sleep(1)
+
                         break
 
                     
-                    elif (major_num_compared == major_num - 1):
-                        logger.info("컴소과 학과 공지가 삭제되었습니다.")
+                    elif (major_num_compared < major_num):
+                        logger.info(f"{major_num}번 컴소과 공지가 삭제되었습니다.")
 
                         for channel in channels:
-                            await channel.send("학과 공지가 삭제되었음\n")
+                            await channel.send(f"{major_num}번 컴소과 공지가 삭제되었습니다\n")
 
                         break
 
-                    await asyncio.sleep(120.0)
+                    await asyncio.sleep(60.0)
+        await asyncio.sleep(3)
 
 # 학과 공지(정통과)에 대한 비동기 함수
 async def major_notice_ICE(channels):
@@ -209,7 +302,8 @@ async def major_notice_ICE(channels):
                     logger.info(f"현재 정통과 major_num 값과 major_num_compared 값\n{major_num} || {major_num_compared}")
 
                     if (major_num_compared == major_num + 1):
-                        # 학과 공지 제목 추출
+
+                        # 정통과 공지 제목 추출
                         title_major_raw = soup_major_compared.find('td', attrs={'class':'td-subject'})
                         divide = title_major_raw.get_text().split()
 
@@ -224,22 +318,76 @@ async def major_notice_ICE(channels):
                         a = tr2[0].find('a')
                         js_splits = re.findall("'([^']*)'", a['href'])
                         link2 = f"\nhttps://www.dongyang.ac.kr/combBbs/{js_splits[0]}/{js_splits[1]}/{js_splits[3]}/view.do?layout=unknown \n"
-                        banner_major = "새로운 학과 공지가 올라왔습니다.\n\n"
+                        banner_major = "새로운 정통과 공지가 올라왔습니다.\n\n"
 
                         for channel in channels:
                             await channel.send(banner_major + title_major + link2)
 
                         break
+
+                    elif(major_num_compared > major_num + 1):
+                        target = int(major_num_compared - major_num)
+                        # 정통과 공지 제목 추출
+                        title_major_raw = soup_major_compared.find('td', attrs={'class':'td-subject'})
+                        divide = title_major_raw.get_text().split()
+
+                        title_major = '제목: '
+            
+                        for i in divide:
+                            title_major += i + ' '
                     
-                    elif (major_num_compared == major_num - 1):
-                        logger.info("정통과 학과 공지가 삭제되었습니다.")
+                        # 정통과 공지 url 추출
+                        tr2 = soup_major_compared.find_all('tr', attrs={'class':''})
+                        tr2.pop(0)
+                        a = tr2[0].find('a')
+                        js_splits = re.findall("'([^']*)'", a['href'])
+                        link2 = f"\nhttps://www.dongyang.ac.kr/combBbs/{js_splits[0]}/{js_splits[1]}/{js_splits[3]}/view.do?layout=unknown \n"
+                        banner_major = "새로운 정통과 공지가 올라왔습니다.\n\n"
 
                         for channel in channels:
-                            await channel.send("정통과 학과 공지가 삭제되었음\n 제목: ")
+                            await channel.send(banner_major + title_major + link2)
+
+                        # ------------------------------------------------------------
+
+                        for channel in channels:
+                            await channel.send(f"안내: {target-1}개의 건너뛰어진 공지사항이 있습니다.")
+
+                        for i in range(target-1):
+
+                            # 정통과 공지 제목 추출
+                            title_major_raw = soup_major_compared.find_all('td', attrs={'class':'td-subject'})
+                            del title_major_raw[0]
+                            divide = title_major_raw[i+1].get_text().split()
+
+                            title_major = '제목: '
+            
+                            for j in divide:
+                                title_major += j + ' '
+
+                            # 정통과 공지 url 추출
+                            tr2 = soup_major_compared.find_all('tr', attrs={'class':''})
+                            tr2.pop(0)
+                            a = tr2[i+1].find('a')
+                            js_splits = re.findall("'([^']*)'", a['href'])
+                            link2 = f"\nhttps://www.dongyang.ac.kr/combBbs/{js_splits[0]}/{js_splits[1]}/{js_splits[3]}/view.do?layout=unknown \n"
+                            banner_major = f"{i+1}.\n"
+
+                            for channel in channels:
+                                await channel.send(banner_major + title_major + link2)
+
+                            await asyncio.sleep(1)
+
+                        break
+                    
+                    elif (major_num_compared < major_num):
+                        logger.info(f"{major_num}번 정통과 공지가 삭제되었습니다.")
+
+                        for channel in channels:
+                            await channel.send(f"{major_num}번 정통과 공지가 삭제되었습니다\n")
 
                         break
 
-                    await asyncio.sleep(120.0)
+                    await asyncio.sleep(60.0)
 
 @clt.event
 async def on_ready():
@@ -252,7 +400,7 @@ async def on_ready():
     channelIds_ICE = [channelId_forICE] # 컴소과 공지를 보낼 채널 입력
     await channelId_forTEST.send("봇 준비 완료!")
     await clt.change_presence(status=discord.Status.online)
-    await asyncio.sleep(3.0)
+    await asyncio.sleep(1.0)
     try:
         await asyncio.gather(univer_notice(channelIds_univer), 
                             asyncio.sleep(0.5),
