@@ -205,8 +205,8 @@ async def major_notice_CSE(channels):
 
                         break
 
-                    elif(major_num_compared > major_num - 3):
-                        target = int(major_num_compared - major_num + 3)
+                    elif(major_num_compared > major_num + 1):
+                        target = int(major_num_compared - major_num)
                         # 컴소과 공지 제목 추출
                         title_major_raw = soup_major_compared.find('td', attrs={'class':'td-subject'})
                         divide = title_major_raw.get_text().split()

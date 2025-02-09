@@ -1,5 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 import time
 
 import requests
@@ -7,7 +9,8 @@ from bs4 import BeautifulSoup
 
 url = 'http://portal.dongyang.ac.kr/login_real.jsp?targetId=DoIT&RelayState=https://doit.dongyang.ac.kr/main/default.aspx'
 
-browser = webdriver.Chrome("C:\chromedriver_win32\chromedriver.exe")
+service = Service(ChromeDriverManager().install())
+browser = webdriver.Chrome(service=service)
 
 browser.implicitly_wait(10) # 페이지가 로딩될 때까지 최대 10초 기다림
 browser.maximize_window() # 화면 최대화
