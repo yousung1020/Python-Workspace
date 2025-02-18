@@ -1,10 +1,68 @@
-2025-02-08 14:33:19,963 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
-411 || 411
-2025-02-08 14:33:20,255 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
-831 || 831
-2025-02-08 14:33:20,715 - INFO - 현재 univer_num 값과 univer_num_compared 값
-4777 || 4777
-2025-02-08 14:33:27,648 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
-411 || 411
-2025-02-08 14:33:35,138 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
-411 || 411
+2025-02-18 15:37:18,136 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+413 || 413
+2025-02-18 15:37:18,144 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:37:18,144 - INFO - 837번 정통과 공지가 삭제되었습니다.
+2025-02-18 15:37:18,386 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4784 || 4784
+2025-02-18 15:37:18,777 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:37:18,777 - INFO - 837번 정통과 공지가 삭제되었습니다.
+2025-02-18 15:37:19,443 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:37:19,443 - INFO - 837번 정통과 공지가 삭제되었습니다.
+2025-02-18 15:37:20,075 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:37:20,075 - INFO - 837번 정통과 공지가 삭제되었습니다.
+2025-02-18 15:37:20,661 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:37:20,661 - INFO - 837번 정통과 공지가 삭제되었습니다.
+2025-02-18 15:37:21,318 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:37:21,318 - INFO - 837번 정통과 공지가 삭제되었습니다.
+2025-02-18 15:37:21,972 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:37:21,972 - INFO - 837번 정통과 공지가 삭제되었습니다.
+2025-02-18 15:37:22,586 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:37:22,586 - INFO - 837번 정통과 공지가 삭제되었습니다.
+2025-02-18 15:39:50,213 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+413 || 413
+2025-02-18 15:39:50,220 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:39:50,220 - INFO - 837번 정통과 공지가 삭제되었습니다.
+2025-02-18 15:39:50,444 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4784 || 4784
+2025-02-18 15:39:50,881 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:39:50,881 - INFO - 837번 정통과 공지가 삭제되었습니다.
+2025-02-18 15:39:51,512 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:39:51,512 - INFO - 837번 정통과 공지가 삭제되었습니다.
+2025-02-18 15:39:52,241 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:39:52,241 - INFO - 837번 정통과 공지가 삭제되었습니다.
+2025-02-18 15:48:34,660 - INFO - 현재 정통과 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:48:34,683 - INFO - 현재 컴소과 major_num 값과 major_num_compared 값
+413 || 413
+2025-02-18 15:48:34,760 - INFO - 현재 univer_num 값과 univer_num_compared 값
+4784 || 4784
+2025-02-18 15:50:53,902 - INFO - 현재 컴소과 공지 major_num 값과 major_num_compared 값
+413 || 413
+2025-02-18 15:50:53,945 - INFO - 현재 정통과 공지 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 15:50:53,978 - INFO - 현재 대학 공지 univer_num 값과 univer_num_compared 값
+4784 || 4784
+2025-02-18 16:08:30,864 - INFO - 현재 컴소과 공지 major_num 값과 major_num_compared 값
+413 || 413
+2025-02-18 16:08:31,047 - INFO - 현재 대학 공지 univer_num 값과 univer_num_compared 값
+4784 || 4784
+2025-02-18 16:08:31,051 - INFO - 현재 정통과 공지 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 16:09:30,978 - INFO - 현재 컴소과 공지 major_num 값과 major_num_compared 값
+413 || 413
+2025-02-18 16:09:31,183 - INFO - 현재 정통과 공지 major_num 값과 major_num_compared 값
+837 || 837
+2025-02-18 16:09:31,224 - INFO - 현재 대학 공지 univer_num 값과 univer_num_compared 값
+4784 || 4784
