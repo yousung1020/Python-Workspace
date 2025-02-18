@@ -4,6 +4,7 @@ from multiprocessing.connection import Client
 from bs4 import BeautifulSoup
 from datetime import datetime, time
 import discord
+from discord.ext import commands
 import re
 import aiohttp
 import asyncio
@@ -19,7 +20,9 @@ logger.addHandler(handler)
 
 # push 할 때는 꼭 토큰 삭제하기!
 token = ''
-clt = discord.Client(intents=discord.Intents.default())
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 # 저녁 10시부터 6시까지 코드가 멈추게끔 하는 함수
 async def pause_night():
@@ -45,20 +48,18 @@ async def fetch(session, url, channels, name):
             
         except aiohttp.ClientConnectorError as err:
             logger.error(f"연결 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name} 공지 함수")
-            for channel in channels:
-                await channel.send(f"연결 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name} 공지 함수")
+            channels[0].send(f"연결 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name} 공지 함수")
             await asyncio.sleep(15)
         
         except asyncio.TimeoutError as err:
             logger.error(f"타임아웃 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name} 함수")
-            for channel in channels:
-                await channel.send(f"타임아웃 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name} 함수")
+            await channels[0].send(f"타임아웃 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name} 함수")
             await asyncio.sleep(15)
 
     raise Exception("세션 연결에 실패하였습니다.")
 
 # 대학 공지 url 및 제목을 추출하는 함수
-async def get_univer_notice_info(soup_univer_compared, name, channels):
+async def get_univer_notice_info(soup_univer_compared, channels):
     # 대학 공지 제목 추출
     title_univer = soup_univer_compared.find_all('tr', attrs={'class':''})
     title_univer.pop(0)
@@ -241,17 +242,17 @@ async def major_notice(channels, name, url):
 
                 await asyncio.sleep(60.0)
 
-@clt.event
+@bot.event
 async def on_ready():
     # 채널 id 입력, 채널 변수가 더 필요할 경우 추가할 것
-    channelId_forTEST = clt.get_channel()
-    channelId_forICE = clt.get_channel() # 정통과 채널 id 입력
-    channelId_forCSE = clt.get_channel() # 컴소과 채널 id 입력
-    channelIds_univer = [channelId_forICE, channelId_forCSE] # 대학 공지를 보낼 채널 입력
-    channelIds_CSE = [channelId_forCSE] # 정통과 공지를 보낼 채널 입력
-    channelIds_ICE = [channelId_forICE] # 컴소과 공지를 보낼 채널 입력
+    channelId_forTEST = bot.get_channel()
+    channelId_forICE = bot.get_channel() # 정통과 채널 id 입력
+    channelId_forCSE = bot.get_channel() # 컴소과 채널 id 입력
+    channelIds_univer = [channelId_forTEST, channelId_forICE, channelId_forCSE] # 대학 공지를 보낼 채널 입력
+    channelIds_CSE = [channelId_forTEST, channelId_forCSE] # 정통과 공지를 보낼 채널 입력
+    channelIds_ICE = [channelId_forTEST, channelId_forICE] # 컴소과 공지를 보낼 채널 입력
     await channelId_forTEST.send("봇 준비 완료!")
-    await clt.change_presence(status=discord.Status.online)
+    await bot.change_presence(status=discord.Status.online)
     await asyncio.sleep(1.0)
     try:
         await asyncio.gather(univer_notice(channelIds_univer), 
@@ -272,4 +273,16 @@ async def on_ready():
         logger.error(f"TraceBack 정보: \n {traceback_msg}")
         pass
 
-clt.run(token)
+@bot.command(name="식단표")
+async def meal(ctx):
+    test_channel = bot.get_channel()
+    async with aiohttp.ClientSession() as session:
+        meal_info = await fetch(session, "http://www.dmu.ac.kr/dongyang/130/subview.do", test_channel, "식단표 함수수")
+        soup_meal = BeautifulSoup(meal_info, "lxml")
+        meal_info = soup_meal.find_all()
+
+    info_msg = ("이번주 식단표는 다음과 같습니다.\n\n"
+                "한식\n"
+                )
+
+bot.run(token)
