@@ -2,7 +2,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 from multiprocessing.connection import Client
 from bs4 import BeautifulSoup
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 import discord
 from discord.ext import commands
 import re
@@ -106,7 +106,7 @@ async def univer_notice(channels):
             html_info = await fetch(session, 'https://www.dongyang.ac.kr/dongyang/129/subview.do', channels, "대학")
             soup_univer = BeautifulSoup(html_info, 'lxml')
             univer_num = soup_univer.find_all('tr', attrs={'class':''})
-            univer_num.pop(0)
+            del univer_num[0]
             univer_num = univer_num[0].find("td", class_="td-num").get_text()
             univer_num = int(univer_num)
 
@@ -116,7 +116,7 @@ async def univer_notice(channels):
                 soup_univer_compared = BeautifulSoup(html_info_compared, 'lxml')
                 univer_num_compared = soup_univer_compared.find_all('tr', attrs={'class':''})
                 univer_num_compared.pop(0)
-                univer_num_compared = univer_num_compared[0].find().get_text()
+                univer_num_compared = univer_num_compared[0].find("td", class_="td-num").get_text()
                 univer_num_compared = int(univer_num_compared)
                 now = datetime.now()
 
@@ -126,13 +126,13 @@ async def univer_notice(channels):
                 logger.info(f"현재 대학 공지 univer_num 값과 univer_num_compared 값\n{univer_num} || {univer_num_compared}")
 
                 if (univer_num_compared == univer_num + 1):
-                    await get_univer_notice_info(univer_num_compared, "대학", channels)
+                    await get_univer_notice_info(soup_univer_compared, channels)
                     break
                     
                 elif(univer_num_compared > univer_num + 1):
                     target = int(univer_num_compared - univer_num)
 
-                    await get_univer_notice_info(univer_num_compared, "대학", channels)
+                    await get_univer_notice_info(soup_univer_compared, channels)
 
                     #-------------------------------------------------------------------------
                     
@@ -191,14 +191,14 @@ async def major_notice(channels, name, url):
                 print("-------------------------------------------------------------------------------------\n")
                 logger.info(f"현재 {name} 공지 major_num 값과 major_num_compared 값\n{major_num} || {major_num}")
 
-                if (major_num_compared == major_num + 1):
-                    await get_major_notice_info(major_num_compared, name, channels)
+                if (major_num_compared == major_num):
+                    await get_major_notice_info(soup_major_compared, name, channels)
                     break
 
                 elif(major_num_compared > major_num + 1):
                     target = int(major_num_compared - major_num)
 
-                    await get_major_notice_info(major_num_compared, name, channels)
+                    await get_major_notice_info(soup_major_compared, name, channels)
 
                     # ------------------------------------------------------------
 
@@ -242,6 +242,69 @@ async def major_notice(channels, name, url):
 
                 await asyncio.sleep(60.0)
 
+# 채널에 보낼 식단 메세지 비동기 함수
+async def menu_msg_formmat(menu, channels):
+    menu = ("오늘의 한식 메뉴\n"
+            f"```{menu}```")
+    for channel in channels:
+        await channel.send(menu)
+
+# 식단 메뉴에 대한 비동기 함수
+async def today_menu(channels):
+    async with aiohttp.ClientSession() as session:
+        meal_info = await fetch(session, "http://www.dmu.ac.kr/dongyang/130/subview.do", channels, "식단표 함수")
+
+    soup_meal = BeautifulSoup(meal_info, "lxml")
+    meal_info = soup_meal.find_all("tr", attrs={"class" : ""})
+    
+    del meal_info[0::2]
+    today_week = datetime.today().weekday()
+
+    # 0 ~ 4: 월요일 ~ 금요일
+    if today_week == 0:
+        monday_menu = meal_info[0].find_all('td', attrs={"class" : ""})
+        monday_menu = monday_menu[2].get_text()
+        await menu_msg_formmat(monday_menu, channels)
+
+    elif today_week == 1:
+        tuesday_menu = meal_info[1].find_all('td', attrs={"class" : ""})
+        tuesday_menu = tuesday_menu[2].get_text()
+        await menu_msg_formmat(tuesday_menu, channels)
+
+    elif today_week == 2:
+        wednesday_menu = meal_info[2].find_all('td', attrs={"class" : ""})
+        wednesday_menu = wednesday_menu[2].get_text()
+        await menu_msg_formmat(wednesday_menu, channels)
+
+    elif today_week == 3:
+        thursday_menu = meal_info[3].find_all('td', attrs={"class":""})
+        thursday_menu = thursday_menu[2].get_text()
+        await menu_msg_formmat(thursday_menu, channels)
+
+    elif today_week == 4:
+        friday_menu = meal_info[4].find_all('td', attrs={"class":""})
+        friday_menu = friday_menu[2].get_text()
+        await menu_msg_formmat(friday_menu, channels)
+
+# 윗 함수가 하루에 한 번씩만 호출되게끔 하는 스케쥴링 함수
+async def schedule_meal(channels):
+    now = datetime.now()
+    target_time = datetime.combine(now.date(), time(9, 0))
+        
+    # 코드를 재가동 했을 때의 시간이 오전 9시 이후라면, 목표 시간을 다음 날로 설정
+    if now >= target_time:
+        target_time += timedelta(days=1)
+        
+    delay = (target_time - now).total_seconds()  # 다음 실행까지의 대기 시간(초 단위)
+    print(str(float((delay / 60) / 60)) + "시간 기다린 후에 해당 식단표 함수 가동")
+    await asyncio.sleep(delay)
+    await today_menu(channels)
+        
+    # 처음 실행 후에는 24시간마다 실행
+    while True:
+        await asyncio.sleep(24 * 60 * 60)
+        await today_menu(channels)
+
 @bot.event
 async def on_ready():
     # 채널 id 입력, 채널 변수가 더 필요할 경우 추가할 것
@@ -249,8 +312,8 @@ async def on_ready():
     channelId_forICE = bot.get_channel() # 정통과 채널 id 입력
     channelId_forCSE = bot.get_channel() # 컴소과 채널 id 입력
     channelIds_univer = [channelId_forTEST, channelId_forICE, channelId_forCSE] # 대학 공지를 보낼 채널 입력
-    channelIds_CSE = [channelId_forTEST, channelId_forCSE] # 정통과 공지를 보낼 채널 입력
-    channelIds_ICE = [channelId_forTEST, channelId_forICE] # 컴소과 공지를 보낼 채널 입력
+    channelIds_CSE = [channelId_forTEST, channelId_forCSE] # 컴소과 공지를 보낼 채널 입력
+    channelIds_ICE = [channelId_forTEST, channelId_forICE] # 정통과 공지를 보낼 채널 입력
     await channelId_forTEST.send("봇 준비 완료!")
     await bot.change_presence(status=discord.Status.online)
     await asyncio.sleep(1.0)
@@ -259,7 +322,8 @@ async def on_ready():
                             asyncio.sleep(0.5),
                             major_notice(channelIds_CSE, "컴소과", "http://www.dmu.ac.kr/dmu_23222/1797/subview.do"), # 학과 공지 함수의 인수: (채널 아이디, 학과 이름, 해당 학과 공지의 url)
                             asyncio.sleep(0.5),
-                            major_notice(channelIds_ICE, "정통과", "http://www.dmu.ac.kr/dmu_23218/1776/subview.do"))
+                            major_notice(channelIds_ICE, "정통과", "http://www.dmu.ac.kr/dmu_23218/1776/subview.do"),
+                            schedule_meal(channelIds_univer)) # 대학 공지와 마찬가지로 모든 채널에 보내야함
 
     except Exception as err_msg:
         now = datetime.now()
@@ -272,17 +336,55 @@ async def on_ready():
         logger.info(f"{str(err_msg)} 오류가 발생하였습니다.")
         logger.error(f"TraceBack 정보: \n {traceback_msg}")
         pass
-
+        
+# !식단표 라는 명령어를 입력했을 때
 @bot.command(name="식단표")
 async def meal(ctx):
-    test_channel = bot.get_channel()
+    test_channel = bot.get_channel() # 여기에 테스트 채널 입력
     async with aiohttp.ClientSession() as session:
-        meal_info = await fetch(session, "http://www.dmu.ac.kr/dongyang/130/subview.do", test_channel, "식단표 함수수")
-        soup_meal = BeautifulSoup(meal_info, "lxml")
-        meal_info = soup_meal.find_all()
+        meal_info = await fetch(session, "http://www.dmu.ac.kr/dongyang/130/subview.do", test_channel, "식단표 함수")
 
-    info_msg = ("이번주 식단표는 다음과 같습니다.\n\n"
-                "한식\n"
-                )
+    soup_meal = BeautifulSoup(meal_info, "lxml")
+    meal_info = soup_meal.find_all("tr", attrs={"class" : ""})
+    del meal_info[0::2] # 첫번째 인덱스부터 2만큼의 간격마다 삭제
+    target = 0
+    menu = []
+    for i in meal_info:
+        menu.append(i.find_all("td", attrs={"class":""}))
+        target += 1
+
+        # 월~금까지의 정보를 추가했으면(다섯 번) for문 탈출
+        if target > 5:
+            break
+
+    info_msg = (
+        "이번주 식단표는 다음과 같습니다.\n\n"
+        "요일별 고정 메뉴!\n"
+        "월요일 ~ 금요일\n"
+        "```라면 / 치즈 라면 / 해물짬뽕 라면 / 짜파게티 / 짜계치 & 공깃밥```\n"
+        "```불닭볶음면 / 까르보 불닭볶음면 / 치즈 불닭볶음면 & 계란후라이 & 공깃밥```\n"
+        "```돈까스, 치즈 돈까스, 통가슴살 치킨까스, 고구마 치즈 돈까스, 수제 왕 돈까스```\n"
+        "월요일 ~ 화요일\n"
+        "```스팸 김치 볶음밥```\n"
+        "수요일\n"
+        "```치킨 마요 덮밥```\n"
+        "```불닭 마요 덮밥```\n"
+        "목요일\n"
+        "```삼겹살 덮밥```\n"
+        "금요일\n"
+        "```장조림 버터 비빔밥```\n"
+        "월요일 한식:\n"
+        f"```{menu[0][2].get_text()}```\n"
+        "화요일 한식:\n"
+        f"```{menu[1][2].get_text()}```\n"
+        "수요일 한식:\n"
+        f"```{menu[2][2].get_text()}```\n"
+        "목요일 한식:\n"
+        f"```{menu[3][2].get_text()}```\n"
+        "금요일 한식\n"
+        f"```{menu[4][2].get_text()}```"
+        )
+
+    await ctx.send(info_msg)
 
 bot.run(token)
