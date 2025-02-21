@@ -309,18 +309,20 @@ async def schedule_today_meal(channels):
 
 @bot.event
 async def on_ready():
-    # 해당 함수의 중복 실행 방지
-    global is_bot_ready
-    if is_bot_ready:
-        return
-    is_bot_ready = True
-
-    logger.info("on_ready 함수가 호출되었습니다.")
-
     # 채널 id 입력, 채널 변수가 더 필요할 경우 추가할 것
     channelId_forTEST = bot.get_channel()
     channelId_forICE = bot.get_channel() # 정통과 채널 id 입력
     channelId_forCSE = bot.get_channel() # 컴소과 채널 id 입력
+
+    # 해당 함수의 중복 실행 방지
+    global is_bot_ready
+    if is_bot_ready:
+        logger.error("함수가 중복으로 실행됨")
+        await channelId_forTEST.send("함수가 중복으로 실행되었습니다.")
+        return
+
+    is_bot_ready = True
+
     channelIds_univer = [channelId_forTEST, channelId_forICE, channelId_forCSE] # 대학 공지를 보낼 채널 입력
     channelIds_CSE = [channelId_forTEST, channelId_forCSE] # 컴소과 공지를 보낼 채널 입력
     channelIds_ICE = [channelId_forTEST, channelId_forICE] # 정통과 공지를 보낼 채널 입력
