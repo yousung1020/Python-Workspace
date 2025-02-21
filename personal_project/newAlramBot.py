@@ -10,6 +10,8 @@ import aiohttp
 import asyncio
 import traceback
 
+is_bot_ready = False
+
 # 로깅 사전 설정
 logger = logging.getLogger("alarm_bot") # logger 객체 생성
 logger.setLevel(logging.INFO) # 로그 레벨 설정
@@ -287,7 +289,7 @@ async def today_menu(channels):
         await menu_msg_formmat(friday_menu, channels)
 
 # 윗 함수가 하루에 한 번씩만 호출되게끔 하는 스케쥴링 함수
-async def schedule_meal(channels):
+async def schedule_today_meal(channels):
     now = datetime.now()
     target_time = datetime.combine(now.date(), time(9, 0))
         
@@ -307,6 +309,14 @@ async def schedule_meal(channels):
 
 @bot.event
 async def on_ready():
+    # 해당 함수의 중복 실행 방지
+    global is_bot_ready
+    if is_bot_ready:
+        return
+    is_bot_ready = True
+
+    logger.info("on_ready 함수가 호출되었습니다.")
+
     # 채널 id 입력, 채널 변수가 더 필요할 경우 추가할 것
     channelId_forTEST = bot.get_channel()
     channelId_forICE = bot.get_channel() # 정통과 채널 id 입력
@@ -317,30 +327,31 @@ async def on_ready():
     await channelId_forTEST.send("봇 준비 완료!")
     await bot.change_presence(status=discord.Status.online)
     await asyncio.sleep(1.0)
-    try:
-        await asyncio.gather(univer_notice(channelIds_univer), 
-                            asyncio.sleep(0.5),
-                            major_notice(channelIds_CSE, "컴소과", "http://www.dmu.ac.kr/dmu_23222/1797/subview.do"), # 학과 공지 함수의 인수: (채널 아이디, 학과 이름, 해당 학과 공지의 url)
-                            asyncio.sleep(0.5),
-                            major_notice(channelIds_ICE, "정통과", "http://www.dmu.ac.kr/dmu_23218/1776/subview.do"),
-                            schedule_meal(channelIds_univer)) # 대학 공지와 마찬가지로 모든 채널에 보내야함
+    while True:
+        try:
+            await asyncio.gather(univer_notice(channelIds_univer), 
+                                asyncio.sleep(0.5),
+                                major_notice(channelIds_CSE, "컴소과", "http://www.dmu.ac.kr/dmu_23222/1797/subview.do"), # 학과 공지 함수의 인수: (채널 아이디, 학과 이름, 해당 학과 공지의 url)
+                                asyncio.sleep(0.5),
+                                major_notice(channelIds_ICE, "정통과", "http://www.dmu.ac.kr/dmu_23218/1776/subview.do"),
+                                schedule_today_meal(channelIds_univer)) # 대학 공지와 마찬가지로 모든 채널에 보내야함
 
-    except Exception as err_msg:
-        now = datetime.now()
-        await channelId_forTEST.send(f"홀리쒯, 오류가 발생하였네요!!! 호다닥 확인을 해야겠죠?\n힌트!: {str(err_msg)}")
-        print("오류가 발생하였습니다. 오류 메세지는 다음과 같습니다.\n" + str(err_msg))
-        print("해당 오류가 발생한 시간:", now)
-        print("해당 오류가 발생한 위치:")
-        traceback.print_exc()
-        traceback_msg = traceback.format_exc()
-        logger.info(f"{str(err_msg)} 오류가 발생하였습니다.")
-        logger.error(f"TraceBack 정보: \n {traceback_msg}")
-        pass
+        except Exception as err_msg:
+            now = datetime.now()
+            await channelId_forTEST.send(f"홀리쒯, 오류가 발생하였네요!!! 호다닥 확인을 해야겠죠?\n힌트!: {str(err_msg)}")
+            print("오류가 발생하였습니다. 오류 메세지는 다음과 같습니다.\n" + str(err_msg))
+            print("해당 오류가 발생한 시간:", now)
+            print("해당 오류가 발생한 위치:")
+            traceback.print_exc()
+            traceback_msg = traceback.format_exc()
+            logger.info(f"{str(err_msg)} 오류가 발생하였습니다.")
+            logger.error(f"TraceBack 정보: \n {traceback_msg}")
+            await asyncio.sleep(10)
         
 # !식단표 라는 명령어를 입력했을 때
 @bot.command(name="식단표")
 async def meal(ctx):
-    test_channel = bot.get_channel() # 여기에 테스트 채널 입력
+    test_channel = bot.get_channel() # 여기에 테스트 채널id 입력
     async with aiohttp.ClientSession() as session:
         meal_info = await fetch(session, "http://www.dmu.ac.kr/dongyang/130/subview.do", test_channel, "식단표 함수")
 
