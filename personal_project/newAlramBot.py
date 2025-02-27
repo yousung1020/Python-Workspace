@@ -61,7 +61,7 @@ class Notice:
     async def pause_night(self):
         now = datetime.now().time()
 
-        if time(22, 00) <= now or now <= time(6, 0):
+        if time(23, 00) <= now or now <= time(6, 0):
             print("밤 10시부터 아침 6시까지 동작이 중지됩니다.")
             logger.info("밤 10시이므로 잠 자러 감")
             await asyncio.sleep(60 * 60 * 8 + 5) # 8시간 동안 중지
@@ -77,37 +77,38 @@ class Notice:
         title_univer = soup_univer_compared.find_all('tr', attrs={'class':''})
         del title_univer[0]
         title_raw_univer = title_univer[0].find('strong').get_text()
-        title_university = f"제목: {title_raw_univer}"
+        title_university = f"📜 제목: {title_raw_univer}"
 
         # 대학 공지 url 추출
         a1 = title_univer[0].find('a')
         link1_before = a1['href']
         link1_after = f"\nhttps://www.dongyang.ac.kr{link1_before}?layout=unknown \n"
-        banner_university = f"새로운 {self.name} 공지가 올라왔습니다.\n\n"
+        banner_university = f"📌 새로운 {self.name} 공지가 올라왔습니다! 📌\n\n"
 
         for channel in self.channelIds:
             await channel.send(banner_university + title_university + link1_after)
 
     # 학과 공지 url 및 제목을 추출하는 함수
-    async def get_major_notice_info(self, soup_major_compared, name):
+    async def get_major_notice_info(self, soup_major_compared):
+
+        major_info =  soup_major_compared.find_all('tr', attrs={'class':''})
+        del major_info[0]
 
         # 학과 공지 제목 추출
-        title_major_raw = soup_major_compared.find('td', attrs={'class':'td-subject'})
+        title_major_raw = major_info[0].find('td', attrs={'class':'td-subject'})
         divide = title_major_raw.get_text().split()
 
-        title_major = '제목: '
+        title_major = "📜 제목: "
         
         for i in divide:
             title_major += i + ' '
 
         # 학과 공지 url 추출
-        tr2 = soup_major_compared.find_all('tr', attrs={'class':''})
-        del tr2[0]
-        a = tr2[0].find('a')
+        a = major_info[0].find('a')
         js_splits = re.findall("'([^']*)'", a['href'])
         link2 = f"\nhttps://www.dongyang.ac.kr/combBbs/{js_splits[0]}/{js_splits[1]}/{js_splits[3]}/view.do?layout=unknown \n"
 
-        banner_major = f"새로운 {name} 공지가 올라왔습니다.\n\n"
+        banner_major = f"📌 새로운 {self.name} 공지가 올라왔습니다! 📌\n\n"
 
         for channel in self.channelIds:
             await channel.send(banner_major + title_major + link2)
@@ -151,7 +152,7 @@ class Notice:
                     await self.get_univer_notice_info(soup_univer_compared)
                     
                     for channel in self.channelIds:
-                        await channel.send(f"{target-1}개의 건너뛰어진 공지사항이 있습니다.")
+                        await channel.send(f"📌 {target-1}개의 건너뛰어진 공지사항이 있습니다. 📌")
 
                     for i in range(target-1):
                         title_univer = soup_univer_compared.find_all('tr', attrs={'class':''})
@@ -162,7 +163,7 @@ class Notice:
                         a1 = title_univer[i+1].find('a')
                         link1_before = a1['href']
                         link1_after = f"\nhttps://www.dongyang.ac.kr{link1_before}?layout=unknown \n"
-                        banner_university = "새로운 대학 공지가 올라왔습니다.\n\n"
+                        banner_university = "📌 새로운 대학 공지가 올라왔습니다! 📌\n\n"
 
                         for channel in self.channelIds:
                             await channel.send(banner_university + title_university + link1_after)
@@ -171,10 +172,10 @@ class Notice:
                     break
 
                 elif (univer_num_compared < univer_num):
-                    logger.info(f"{univer_num}번 대학 공지가 삭제되었습니다.")
+                    logger.info(f"📌 {univer_num}번 대학 공지가 삭제되었습니다. 📌")
                         
                     for channel in self.channelIds:
-                        await channel.send(f"{univer_num}번 대학 공지가 삭제되었습니다\n")
+                        await channel.send(f"📌 {univer_num}번 대학 공지가 삭제되었습니다. 📌\n")
                     break
                         
                 await asyncio.sleep(60.0)
@@ -187,7 +188,7 @@ class Notice:
 
             soup_major = BeautifulSoup(html_info, 'lxml')
             major_num = soup_major.find_all('tr', attrs={'class':""})
-            major_num.pop(0)
+            del major_num[0]
             major_num = int(major_num[0].find("td", class_="td-num").get_text().replace(" ", "").replace("\n", ""))
             now = datetime.now()
 
@@ -199,7 +200,7 @@ class Notice:
 
                 soup_major_compared = BeautifulSoup(html_info_compared, 'lxml')
                 major_num_compared = soup_major_compared.find_all('tr', attrs={'class':''})
-                major_num_compared.pop(0)
+                del major_num_compared[0]
                 major_num_compared = int(major_num_compared[0].find("td", class_="td-num").get_text().replace(" ", "").replace("\n", ""))
                 
                 now = datetime.now()
@@ -210,16 +211,16 @@ class Notice:
                 logger.info(f"현재 {self.name} 공지 major_num 값과 major_num_compared 값\n{major_num} || {major_num}")
 
                 if (major_num_compared == major_num + 1):
-                    await self.get_major_notice_info(soup_major_compared, self.name)
+                    await self.get_major_notice_info(soup_major_compared)
                     break
 
                 elif(major_num_compared > major_num + 1):
                     target = int(major_num_compared - major_num)
 
-                    await self.get_major_notice_info(soup_major_compared, self.name)
+                    await self.get_major_notice_info(soup_major_compared)
 
                     for channel in self.channelIds:
-                        await channel.send(f"안내: {target-1}개의 건너뛰어진 공지사항이 있습니다.")
+                        await channel.send(f"📌 안내: {target-1}개의 건너뛰어진 공지사항이 있습니다. 📌")
 
                     for i in range(target-1):
 
@@ -249,10 +250,10 @@ class Notice:
                     break
                     
                 elif (major_num_compared < major_num):
-                    logger.info(f"{major_num}번 {self.name} 공지가 삭제되었습니다.")
+                    logger.info(f"📌 {major_num}번 {self.name} 공지가 삭제되었습니다. 📌")
 
                     for channel in self.channelIds:
-                        await channel.send(f"{major_num}번 {self.name} 공지가 삭제되었습니다\n")
+                        await channel.send(f"📌 {major_num}번 {self.name} 공지가 삭제되었습니다. 📌\n")
 
                     break
 
@@ -267,7 +268,7 @@ class Menu:
 
     # 채널에 보낼 식단 메세지 비동기 함수
     async def menu_msg_formmat(self, menu):
-        menu = ("오늘의 한식 메뉴:\n"
+        menu = ("🍚 오늘의 한식 메뉴! 🍚\n"
                 f"```{menu}```")
         return menu
 
@@ -425,30 +426,30 @@ async def meal(ctx):
             break
 
     info_msg = (
-        "이번주 식단표는 다음과 같습니다.\n\n"
-        "요일별 고정 메뉴!\n\n"
-        "월요일 ~ 금요일\n"
+        "📌 이번주 식단표는 다음과 같습니다. 📌\n\n"
+        "🔎 요일별 고정 메뉴!\n\n"
+        "📝 월요일 ~ 금요일\n"
         "```라면 / 치즈 라면 / 해물짬뽕 라면 / 짜파게티 / 짜계치 & 공깃밥```\n"
         "```불닭볶음면 / 까르보 불닭볶음면 / 치즈 불닭볶음면 & 계란후라이 & 공깃밥```\n"
         "```돈까스, 치즈 돈까스, 통가슴살 치킨까스, 고구마 치즈 돈까스, 수제 왕 돈까스```\n"
-        "월요일 ~ 화요일\n"
+        "📝 월요일 ~ 화요일\n"
         "```스팸 김치 볶음밥```\n"
-        "수요일\n"
+        "📝 수요일\n"
         "```치킨 마요 덮밥```\n"
         "```불닭 마요 덮밥```\n"
-        "목요일\n"
+        "📝 목요일\n"
         "```삼겹살 덮밥```\n"
-        "금요일\n"
+        "📝 금요일\n"
         "```장조림 버터 비빔밥```\n"
-        "월요일 한식:\n"
+        "🍚 월요일 한식 🍚\n"
         f"```{menu[0][2].get_text()}```\n"
-        "화요일 한식:\n"
+        "🍚 화요일 한식 🍚\n"
         f"```{menu[1][2].get_text()}```\n"
-        "수요일 한식:\n"
+        "🍚 수요일 한식 🍚\n"
         f"```{menu[2][2].get_text()}```\n"
-        "목요일 한식:\n"
+        "🍚 목요일 한식 🍚\n"
         f"```{menu[3][2].get_text()}```\n"
-        "금요일 한식:\n"
+        "🍚 금요일 한식 🍚\n"
         f"```{menu[4][2].get_text()}```"
         )
 
