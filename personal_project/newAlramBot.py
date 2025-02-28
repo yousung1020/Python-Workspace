@@ -127,6 +127,7 @@ class Notice:
 
             while True:
                 await self.pause_night()
+
                 async with aiohttp.ClientSession() as session:
                     html_info_compared = await fetch(session, self.url, self.channelIds, self.name)
 
@@ -343,12 +344,12 @@ class Menu:
         delay = (target_time - now).total_seconds()  # 다음 실행까지의 대기 시간(초 단위)
         print(str(float((delay / 60) / 60)) + "시간 기다린 후에 해당 식단표 함수 가동")
         await asyncio.sleep(delay)
-        await self.today_menu(self.channelIds)
+        await self.today_menu()
             
         # 처음 실행 후에는 24시간마다 실행
         while True:
             await asyncio.sleep(24 * 60 * 60)
-            await self.today_menu(self.channelIds)
+            await self.today_menu()
 # --------------------------------------------------------------------------------------------------
 
 @bot.event
@@ -386,14 +387,23 @@ async def on_ready():
             # 식단 관련 인스턴스
             meal_instance = Menu(channelIds_MENU)
 
-            await asyncio.gather(univer_notice_instance.univer_notice(), 
-                                asyncio.sleep(0.5),
-                                major_notice_CSE_instance.major_notice(),
-                                asyncio.sleep(0.5),
-                                major_notice_ICE_instance.major_notice(),
-                                meal_instance.schedule_today_meal())
+            tasks = [
+                univer_notice_instance.univer_notice(),
+                asyncio.sleep(0.5),
+                major_notice_CSE_instance.major_notice(),
+                asyncio.sleep(0.5),
+                major_notice_ICE_instance.major_notice(),
+                meal_instance.schedule_today_meal()
+            ]
+
+            await asyncio.gather(*tasks, return_exceptions=False)
 
         except Exception as err_msg:
+            # 모든 task 취소
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+
             now = datetime.now()
             await channelId_for_test.send(f"홀리쒯, 오류가 발생하였네요!!! 호다닥 확인을 해야겠죠?\n힌트!: {str(err_msg)}")
             print("오류가 발생하였습니다. 오류 메세지는 다음과 같습니다.\n" + str(err_msg))
@@ -404,6 +414,15 @@ async def on_ready():
             logger.info(f"{str(err_msg)} 오류가 발생하였습니다.")
             logger.error(f"TraceBack 정보: \n {traceback_msg}")
             await asyncio.sleep(10)
+        
+        finally:
+            for task in tasks:
+                try:
+                    await task
+                
+                except asyncio.CancelledError:
+                    pass
+            
         
 # !식단표 라는 명령어를 입력했을 때
 @bot.command(name="식단표")
