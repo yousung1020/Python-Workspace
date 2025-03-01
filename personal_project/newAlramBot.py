@@ -61,7 +61,7 @@ class Notice:
     async def pause_night(self):
         now = datetime.now().time()
 
-        if time(23, 00) <= now or now <= time(6, 0):
+        if time(22, 00) <= now or now <= time(6, 0):
             print("밤 10시부터 아침 6시까지 동작이 중지됩니다.")
             logger.info("밤 10시이므로 잠 자러 감")
             await asyncio.sleep(60 * 60 * 8 + 5) # 8시간 동안 중지
@@ -126,8 +126,6 @@ class Notice:
             univer_num = int(univer_num)
 
             while True:
-                await self.pause_night()
-
                 async with aiohttp.ClientSession() as session:
                     html_info_compared = await fetch(session, self.url, self.channelIds, self.name)
 
@@ -366,12 +364,14 @@ async def on_ready():
     channelId_for_test = bot.get_channel(1041374554368520232) # 테스트 채널 id 입력
     channelId_for_ice = bot.get_channel(1016710195398848524) # 정통과 채널 id 입력
     # channelId_for_cse = bot.get_channel() # 컴소과 채널 id 입력
-    # channelId_for_menu = bot.get_channel() # 식단표 메뉴를 보낼 채널 id 입력
+
+    # 식단표 메뉴를 보낼 채널 id 입력
+    channelId_for_menu_ice = bot.get_channel(1344666105762943046) # 정통과 식단표 채널널
 
     channelIds_univer = [channelId_for_test, channelId_for_ice] # 대학 공지를 보낼 채널 입력
     channelIds_CSE = [channelId_for_test] # 컴소과 공지를 보낼 채널 입력
     channelIds_ICE = [channelId_for_test, channelId_for_ice] # 정통과 공지를 보낼 채널 입력
-    channelIds_MENU = [channelId_for_test] # 식단표 메뉴를 보낼 채널 입력
+    channelIds_MENU = [channelId_for_test, channelId_for_menu_ice] # 식단표 메뉴를 보낼 채널 입력
 
     await channelId_for_test.send("봇 준비 완료!")
     await bot.change_presence(status=discord.Status.online)
@@ -387,22 +387,17 @@ async def on_ready():
             # 식단 관련 인스턴스
             meal_instance = Menu(channelIds_MENU)
 
+            # task 객체 생성
             tasks = [
-                univer_notice_instance.univer_notice(),
-                asyncio.sleep(0.5),
-                major_notice_CSE_instance.major_notice(),
-                asyncio.sleep(0.5),
-                major_notice_ICE_instance.major_notice(),
-                meal_instance.schedule_today_meal()
+                asyncio.create_task(univer_notice_instance.univer_notice()),
+                asyncio.create_task(major_notice_CSE_instance.major_notice()),
+                asyncio.create_task(major_notice_ICE_instance.major_notice()),
+                asyncio.create_task(meal_instance.schedule_today_meal())
             ]
 
             await asyncio.gather(*tasks, return_exceptions=False)
 
         except Exception as err_msg:
-            # 모든 task 취소
-            for task in tasks:
-                if not task.done():
-                    task.cancel()
 
             now = datetime.now()
             await channelId_for_test.send(f"홀리쒯, 오류가 발생하였네요!!! 호다닥 확인을 해야겠죠?\n힌트!: {str(err_msg)}")
@@ -413,15 +408,23 @@ async def on_ready():
             traceback_msg = traceback.format_exc()
             logger.info(f"{str(err_msg)} 오류가 발생하였습니다.")
             logger.error(f"TraceBack 정보: \n {traceback_msg}")
-            await asyncio.sleep(10)
         
         finally:
+            # 모든 task 취소
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+
             for task in tasks:
                 try:
                     await task
-                
                 except asyncio.CancelledError:
                     pass
+                
+                except Exception:
+                    pass
+        
+        logger.info("예외처리 후 함수를 재호출합니다.")
             
         
 # !식단표 라는 명령어를 입력했을 때
