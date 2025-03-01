@@ -375,7 +375,6 @@ async def on_ready():
 
     await channelId_for_test.send("봇 준비 완료!")
     await bot.change_presence(status=discord.Status.online)
-    await asyncio.sleep(1.0)
     while True:
         try:
             # 인스턴스를 생성할 때: (채널 아이디, 이름, url) 순으로 인수 값 입력
@@ -395,6 +394,7 @@ async def on_ready():
                 asyncio.create_task(meal_instance.schedule_today_meal())
             ]
 
+            await asyncio.sleep(1.0)
             await asyncio.gather(*tasks, return_exceptions=False)
 
         except Exception as err_msg:
@@ -425,6 +425,7 @@ async def on_ready():
                     pass
         
         logger.info("예외처리 후 함수를 재호출합니다.")
+        await channelId_for_test.send("예외처리 후 함수를 재호출합니다.")
             
         
 # !식단표 라는 명령어를 입력했을 때
