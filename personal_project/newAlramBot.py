@@ -126,6 +126,8 @@ class Notice:
             univer_num = int(univer_num)
 
             while True:
+                await self.pause_night()
+                
                 async with aiohttp.ClientSession() as session:
                     html_info_compared = await fetch(session, self.url, self.channelIds, self.name)
 
