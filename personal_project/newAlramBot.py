@@ -289,16 +289,21 @@ class Menu:
         # 0 ~ 4: 월요일 ~ 금요일
         if today_week == 0:
             monday_menu = meal_info[0].find_all('td', attrs={"class" : ""})
-            monday_menu = monday_menu[2].get_text()
-        
-            menu = await self.menu_msg_formmat(monday_menu)
+            try:
+                monday_menu = monday_menu[2].get_text()
+            except Exception:
+                return
 
+            menu = await self.menu_msg_formmat(monday_menu)
             for channel in self.channelIds:
                 await channel.send(menu)
 
         elif today_week == 1:
             tuesday_menu = meal_info[1].find_all('td', attrs={"class" : ""})
-            tuesday_menu = tuesday_menu[2].get_text()
+            try:
+                tuesday_menu = tuesday_menu[2].get_text()
+            except Exception:
+                return
 
             menu = await self.menu_msg_formmat(tuesday_menu)
 
@@ -307,7 +312,11 @@ class Menu:
 
         elif today_week == 2:
             wednesday_menu = meal_info[2].find_all('td', attrs={"class" : ""})
-            wednesday_menu = wednesday_menu[2].get_text()
+            try:
+                wednesday_menu = wednesday_menu[2].get_text()
+            except Exception:
+                return
+
             menu = await self.menu_msg_formmat(wednesday_menu)
 
             for channel in self.channelIds:
@@ -315,7 +324,11 @@ class Menu:
 
         elif today_week == 3:
             thursday_menu = meal_info[3].find_all('td', attrs={"class":""})
-            thursday_menu = thursday_menu[2].get_text()
+            try:
+                thursday_menu = thursday_menu[2].get_text()
+            except Exception:
+                return
+
             menu = await self.menu_msg_formmat(thursday_menu)
 
             for channel in self.channelIds:
@@ -323,7 +336,11 @@ class Menu:
 
         elif today_week == 4:
             friday_menu = meal_info[4].find_all('td', attrs={"class":""})
-            friday_menu = friday_menu[2].get_text()
+            try:
+                friday_menu = friday_menu[2].get_text()
+            except Exception:
+                return
+                
             menu = await self.menu_msg_formmat(friday_menu)
 
             for channel in self.channelIds:
