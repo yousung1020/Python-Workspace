@@ -76,7 +76,8 @@ class Notice:
         # 대학 공지 제목 추출
         title_univer = soup_univer_compared.find_all('tr', attrs={'class':''})
         del title_univer[0]
-        title_raw_univer = title_univer[0].find('strong').get_text()
+        title_raw_univer = title_univer[0].find('strong').get_text().replace("\n", "")
+        title_raw_univer = re.sub(r'\s+', ' ', title_raw_univer).strip()
         title_university = f"📜 제목: {title_raw_univer}"
 
         # 대학 공지 url 추출
@@ -180,6 +181,7 @@ class Notice:
                     break
                         
                 await asyncio.sleep(60.0)
+            await asyncio.sleep(5)
 
     # 학과 공지(정통, 컴소과)에 대한 비동기 함수
     async def major_notice(self):
@@ -259,6 +261,7 @@ class Notice:
                     break
 
                 await asyncio.sleep(60.0)
+            await asyncio.sleep(5)
 # ------------------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------------------------
@@ -385,7 +388,7 @@ async def on_ready():
     # channelId_for_cse = bot.get_channel() # 컴소과 채널 id 입력
 
     # 식단표 메뉴를 보낼 채널 id 입력
-    channelId_for_menu_ice = bot.get_channel(1344666105762943046) # 정통과 식단표 채널널
+    channelId_for_menu_ice = bot.get_channel(1344666105762943046) # 정통과 식단표 채널
 
     channelIds_univer = [channelId_for_test, channelId_for_ice] # 대학 공지를 보낼 채널 입력
     channelIds_CSE = [channelId_for_test] # 컴소과 공지를 보낼 채널 입력
@@ -398,9 +401,9 @@ async def on_ready():
         try:
             # 인스턴스를 생성할 때: (채널 아이디, 이름, url) 순으로 인수 값 입력
             # 공지 관련 인스턴스
-            univer_notice_instance = Notice(channelIds_univer, "대학", "http://www.dmu.ac.kr/dongyang/129/subview.do")
-            major_notice_CSE_instance = Notice(channelIds_CSE, "컴소과", "http://www.dmu.ac.kr/dmu_23222/1797/subview.do")
-            major_notice_ICE_instance = Notice(channelIds_ICE, "정통과", "http://www.dmu.ac.kr/dmu_23218/1776/subview.do")
+            univer_notice_instance = Notice(channelIds_univer, "대학", "https://www.dongyang.ac.kr/dmu/4904/subview.do")
+            major_notice_CSE_instance = Notice(channelIds_CSE, "컴소과", "https://www.dongyang.ac.kr/dmu/4580/subview.do")
+            major_notice_ICE_instance = Notice(channelIds_ICE, "정통과", "https://www.dongyang.ac.kr/dmu/4543/subview.do")
 
             # 식단 관련 인스턴스
             meal_instance = Menu(channelIds_MENU)
