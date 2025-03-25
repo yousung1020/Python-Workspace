@@ -271,86 +271,30 @@ class Menu:
         self.channelIds = channelIds
 
     # 채널에 보낼 식단 메세지 비동기 함수
-    async def menu_msg_formmat(self, menu):
+    async def menu_msg_format(self, menu):
         menu = ("🍚 오늘의 한식 메뉴! 🍚\n"
                 f"```{menu}```")
         return menu
 
-
     # 식단 메뉴에 대한 비동기 함수
     async def today_menu(self):
-        channelId_for_test = bot.get_channel(1041374554368520232) # 여기에 테스트 채널 id 입력
+        channelId_for_test = bot.get_channel(1350807050162274327) # 여기에 테스트 채널 id 입력
         async with aiohttp.ClientSession() as session:
-            meal_info = await fetch(session, "http://www.dmu.ac.kr/dongyang/130/subview.do", channelId_for_test, "식단표 함수")
+            meal_info = await fetch(session, "https://www.dongyang.ac.kr/dmu/4902/subview.do", channelId_for_test, "식단표 함수")
 
         soup_meal = BeautifulSoup(meal_info, "lxml")
         meal_info = soup_meal.find_all("tr", attrs={"class" : ""})
+        del meal_info[0:2]
+        meal_info = meal_info[0].find("td", attrs={"class": "highlight"}).get_text().strip().replace("[점심]", "")
+
+        if meal_info != "-":
+            menu = await self.menu_msg_format(meal_info)
+            for channel in self.channelIds:
+                await channel.send(menu)
         
-        del meal_info[0::2]
-        today_week = datetime.today().weekday()
-
-        # 0 ~ 4: 월요일 ~ 금요일
-        if today_week == 0:
-            monday_menu = meal_info[0].find_all('td', attrs={"class" : ""})
-            try:
-                monday_menu = monday_menu[2].get_text()
-            except Exception:
-                return
-
-            menu = await self.menu_msg_formmat(monday_menu)
-            for channel in self.channelIds:
-                await channel.send(menu)
-
-        elif today_week == 1:
-            tuesday_menu = meal_info[1].find_all('td', attrs={"class" : ""})
-            try:
-                tuesday_menu = tuesday_menu[2].get_text()
-            except Exception:
-                return
-
-            menu = await self.menu_msg_formmat(tuesday_menu)
-
-            for channel in self.channelIds:
-                await channel.send(menu)
-
-        elif today_week == 2:
-            wednesday_menu = meal_info[2].find_all('td', attrs={"class" : ""})
-            try:
-                wednesday_menu = wednesday_menu[2].get_text()
-            except Exception:
-                return
-
-            menu = await self.menu_msg_formmat(wednesday_menu)
-
-            for channel in self.channelIds:
-                await channel.send(menu)
-
-        elif today_week == 3:
-            thursday_menu = meal_info[3].find_all('td', attrs={"class":""})
-            try:
-                thursday_menu = thursday_menu[2].get_text()
-            except Exception:
-                return
-
-            menu = await self.menu_msg_formmat(thursday_menu)
-
-            for channel in self.channelIds:
-                await channel.send(menu)
-
-        elif today_week == 4:
-            friday_menu = meal_info[4].find_all('td', attrs={"class":""})
-            try:
-                friday_menu = friday_menu[2].get_text()
-            except Exception:
-                return
-                
-            menu = await self.menu_msg_formmat(friday_menu)
-
-            for channel in self.channelIds:
-                await channel.send(menu)
-
         else:
-            return
+            for channel in self.channelIds:
+                await channel.send("오늘은 한식 메뉴가 없습니다! 😱")
 
     # 하루에 한 번씩만 호출되게끔 하는 스케쥴링 함수
     async def schedule_today_meal(self):
@@ -385,15 +329,16 @@ async def on_ready():
     # 채널 id 입력, 채널 변수가 더 필요할 경우 추가할 것
     channelId_for_test = bot.get_channel(1041374554368520232) # 테스트 채널 id 입력
     channelId_for_ice = bot.get_channel(1016710195398848524) # 정통과 채널 id 입력
-    # channelId_for_cse = bot.get_channel() # 컴소과 채널 id 입력
+    channelId_for_cse = bot.get_channel(1350807050162274327) # 컴소과 채널 id 입력
 
     # 식단표 메뉴를 보낼 채널 id 입력
     channelId_for_menu_ice = bot.get_channel(1344666105762943046) # 정통과 식단표 채널
+    channelId_for_menu_cse = bot.get_channel(1350807234703265842) # 컴소과 식단표 채널
 
-    channelIds_univer = [channelId_for_test, channelId_for_ice] # 대학 공지를 보낼 채널 입력
-    channelIds_CSE = [channelId_for_test] # 컴소과 공지를 보낼 채널 입력
+    channelIds_univer = [channelId_for_test, channelId_for_ice, channelId_for_cse] # 대학 공지를 보낼 채널 입력
+    channelIds_CSE = [channelId_for_test, channelId_for_cse] # 컴소과 공지를 보낼 채널 입력
     channelIds_ICE = [channelId_for_test, channelId_for_ice] # 정통과 공지를 보낼 채널 입력
-    channelIds_MENU = [channelId_for_test, channelId_for_menu_ice] # 식단표 메뉴를 보낼 채널 입력
+    channelIds_MENU = [channelId_for_test, channelId_for_menu_ice, channelId_for_menu_cse] # 식단표 메뉴를 보낼 채널 입력
 
     await channelId_for_test.send("봇 준비 완료!")
     await bot.change_presence(status=discord.Status.online)
@@ -455,49 +400,51 @@ async def on_ready():
 async def meal(ctx):
     channelId_for_test = bot.get_channel(1041374554368520232) # 여기에 테스트 채널 id 입력
     async with aiohttp.ClientSession() as session:
-        meal_info = await fetch(session, "http://www.dmu.ac.kr/dongyang/130/subview.do", channelId_for_test, "식단표 함수")
+        meal_info = await fetch(session, "https://www.dongyang.ac.kr/dmu/4902/subview.do", channelId_for_test, "식단표 함수")
 
     soup_meal = BeautifulSoup(meal_info, "lxml")
     meal_info = soup_meal.find_all("tr", attrs={"class" : ""})
-    del meal_info[0::2] # 첫번째 인덱스부터 2만큼의 간격마다 삭제
-    target = 0
-    menu = []
-    for i in meal_info:
-        menu.append(i.find_all("td", attrs={"class":""}))
-        target += 1
-
-        # 월~금까지의 정보를 추가했으면(다섯 번) for문 탈출
-        if target > 5:
-            break
+    del meal_info[0:2]
+    meal_info = meal_info[0].find_all("td")
+    div_meal = []
+    
+    # 메뉴가 비어있으면 (-) 메뉴가 없다고 하기
+    if meal_info != "-":
+        for i in meal_info:
+            div_meal.append(i.get_text().strip().replace("[점심]", ""))
+    
+    else:
+        for div_meal in meal_info:
+            div_meal.append("메뉴가 없습니다! 😱")
 
     info_msg = (
         "📌 이번주 식단표는 다음과 같습니다. 📌\n\n"
         "🔎 요일별 고정 메뉴!\n\n"
         "📝 월요일 ~ 금요일\n"
-        "```라면 / 치즈 라면 / 해물짬뽕 라면 / 짜파게티 / 짜계치 & 공깃밥```\n"
-        "```불닭볶음면 / 까르보 불닭볶음면 / 치즈 불닭볶음면 & 계란후라이 & 공깃밥```\n"
-        "```돈까스, 치즈 돈까스, 통가슴살 치킨까스, 고구마 치즈 돈까스, 수제 왕 돈까스```\n"
+        "```라면 / 치즈 라면 / 해물짬뽕 라면 / 짜파게티 / 짜계치 & 공깃밥\n가격(순서대로): 3,500원 / 4,000원 / 4,500원 / 3,500원 / 4,000원```\n"
+        "```불닭볶음면 / 까르보 불닭볶음면 / 치즈 불닭볶음면 & 계란후라이 & 공깃밥\n가격(순서대로): 3,500원 / 3,800원 / 4,000원 ```\n"
+        "```돈까스, 치즈 돈까스, 통가슴살 치킨까스, 고구마 치즈 돈까스, 수제 왕 돈까스\n가격(순서대로): 5,000원 / 5,500원 / 5,200원 / 6,000원 / 6,000원```\n"
         "📝 월요일 ~ 화요일\n"
-        "```스팸 김치 볶음밥```\n"
+        "```스팸 김치 볶음밥\n가격: 4,900원```\n"
         "📝 수요일\n"
-        "```치킨 마요 덮밥```\n"
-        "```불닭 마요 덮밥```\n"
+        "```치킨 마요 덮밥\n가격: 4,900원```\n"
+        "```불닭 마요 덮밥\n가격: 4,900원```\n"
         "📝 목요일\n"
-        "```삼겹살 덮밥```\n"
+        "```삼겹살 덮밥\n가격: 5,500원```\n"
         "📝 금요일\n"
-        "```장조림 버터 비빔밥```\n"
+        "```장조림 버터 비빔밥\n가격: 4,500원```\n"
+        "💸 한식 가격은 6,000원으로 고정입니다! 💸\n"
         "🍚 월요일 한식 🍚\n"
-        f"```{menu[0][2].get_text()}```\n"
+        f"```{div_meal[0]}```\n"
         "🍚 화요일 한식 🍚\n"
-        f"```{menu[1][2].get_text()}```\n"
+        f"```{div_meal[1]}```\n"
         "🍚 수요일 한식 🍚\n"
-        f"```{menu[2][2].get_text()}```\n"
+        f"```{div_meal[2]}```\n"
         "🍚 목요일 한식 🍚\n"
-        f"```{menu[3][2].get_text()}```\n"
+        f"```{div_meal[3]}```\n"
         "🍚 금요일 한식 🍚\n"
-        f"```{menu[4][2].get_text()}```"
+        f"```{div_meal[4]}```"
         )
 
     await ctx.send(info_msg)
-
 bot.run(token)

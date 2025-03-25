@@ -1,36 +1,68 @@
-# from datetime import datetime, time
-# import asyncio 
-# now = datetime.now().time()
+# from datetime import datetime, time, timedelta
+# import discord
+# from discord.ext import commands
+# # import asyncio 
+# # now = datetime.now().time()
+# intents = discord.Intents.default()
+# intents.message_content = True
+# bot = commands.Bot(command_prefix='!', intents=intents)
 
-# async def test():
-#     a = 3
-#     await asyncio.sleep(a+3)
-#     now = datetime.now().time()
-#     print(now)
+# @bot.event
+# async def on_ready():
+#     a = bot.get_channel()
+#     b = "c"
+#     c = b.replace("c", "yo")
+#     print(b)
+#     await a.send("📌ㅎㅇㅎㅇㅇ")
 
-# print(now)
-# asyncio.run(test())
-
-for i in range(4):
-    a = [1, 2, 3, 4]
-    del a[0]
-    print(a)
+# bot.run("")
 
 
-# name = "정통과 공지 함수"
-#                     await pause_night()
-#                     await asyncio.sleep(2)
-#                     html_info_compared = await fetch(session, 'https://www.dongyang.ac.kr/dmu_23218/1776/subview.do', channels, name)
-#                     soup_major_compared = BeautifulSoup(html_info_compared, 'lxml')
-#                     major_num_compared = soup_major_compared.find_all('tr', attrs={'class':''})
-#                     major_num_compared.pop(0)
-#                     major_num_compared = major_num_compared[0].find().get_text()
-#                     major_num_compared = int(major_num_compared.replace(" ", "").replace("\n", ""))
+import requests
+from bs4 import BeautifulSoup
 
-# name = "컴소과 공지 함수"
-#                     await pause_night()
-#                     html_info_compared = await fetch(session, 'http://www.dmu.ac.kr/dmu_23222/1797/subview.do', channels, name)
-#                     soup_major_compared = BeautifulSoup(html_info_compared, 'lxml')
-#                     major_num_compared = soup_major_compared.find_all('tr', attrs={'class':''})
-#                     major_num_compared.pop(0)
-#                     major_num_compared = int(major_num_compared[0].find("td", class_="td-num").get_text().replace(" ", "").replace("\n", ""))
+data = requests.get("https://www.dongyang.ac.kr/dmu/4902/subview.do")
+data_null = requests.get("https://www.dongyang.ac.kr/dmu/4902/subview.do?enc=Zm5jdDF8QEB8JTJGZGlldCUyRmRtdSUyRjEzJTJGdmlldy5kbyUzRm1vbmRheSUzRDIwMjUuMDMuMDMlMjZ3ZWVrJTNEbmV4dCUyNg%3D%3D")
+data_null = BeautifulSoup(data_null.text, "lxml")
+
+data_null = data_null.find_all("tr", attrs={"class":""})
+del data_null[0:2]
+data_null = data_null[0].find_all("td", attrs={"class":""})
+
+yo2 = []
+for i in data_null:
+    i = i.get_text().strip()
+    yo2.append(i)
+
+for i in yo2:
+    if (i == "-"):
+        print("-입니다!")
+    else:
+        print("아닌뒈")
+
+data = BeautifulSoup(data.text, "lxml")
+
+data = data.find_all("tr", attrs={"class":""})
+del data[0:2]
+data1 = data
+# data1 = data[1].find("td", attrs={"class":""})
+data = data[0].find("td", attrs={"class":"highlight"}).get_text().strip().replace("[점심]", "")
+data1 = data1[0].find_all("td")
+
+yo = []
+for i in data1:
+    i = i.get_text().strip().replace("[점심]", "")
+    if (i != "-"):
+        yo.append(i)
+    else:
+        yo.append("메뉴가 비었습니다!")
+
+
+# data1 = re.sub(r'\s+', ' ', data1).strip()
+
+# print(data)
+target = 0
+for i in yo:
+    print(yo[target])
+    target += 1
+
