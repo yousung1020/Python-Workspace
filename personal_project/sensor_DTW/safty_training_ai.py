@@ -1,6 +1,6 @@
 import numpy as np
-
-# df: data frame의 줄임말
+from .models import MotionRecording
+# df: pandas의 data frame 줄임말
 import pandas as pd
 import matplotlib.pyplot as plt
 # dtw 계산
@@ -49,21 +49,24 @@ def graph_sensor_data(data_df, title="Sensor Data", show_plot=True):
         plt.show()
 
 # 2. 센서 데이터 다듬기(전처리)
-def preprocess_sensor_data(data_df):
+# 클라이언트로부터 받은 센서 데이터(딕셔너리)를 전처리해서 numpy 배열로 반환하는 함수
+def preprocess_sensor_data(raw_data_dicts):
     # 처리할 데이터가 없으면 빈 배열 반환
-    if data_df.empty:
+    if not raw_data_dicts:
         return np.array([])
     
+    df = pd.DataFrame(raw_data_dicts)
+
     # window_length: 데이터를 얼마나 넓게(몇 프레임) 보고 부드럽게 할지 결정 (홀수여야 함)
     # 데이터 길이가 필터 윈도우 길이보다 짧으면 오류가 나므로, 최소값을 보장
-    window_length = min(data_df.shape[0] - (data_df.shape[0] % 2 == 0), 11)
+    window_length = min(df.shape[0] - (df.shape[0] % 2 == 0), 11)
 
     if window_length < 3:
         window_length = 3
 
     # 모든 센서에 대해서 잡음 제거 필터 적용
     # 일반적으로 다항식 차수 3을 사용
-    smoothed_data = data_df.apply(lambda col: savgol_filter(col, window_length, 3))
+    smoothed_data = df.apply(lambda col: savgol_filter(col, window_length, 3))
 
     # 값의 크기 통일(정규화): 0에서 1사이의 값으로 만들기
     # 정규화된 데이터를 저장할 빈 DataFrame 만들기
@@ -91,44 +94,121 @@ def preprocess_sensor_data(data_df):
     return normalized_data.values
 
 # 동작을 평가하는 실질적인 함수(해당 클래스가 처음 만들어질 때 실행되는 부분)
-class MovementEvaluator:
-    # reference_move: 모범 동작에 대한 센서 값(기준 값)
-    # max_dtw: 완전히 틀린, 마지노선 dtw 거리 기준
-    def __init__(self, reference_move, max_dtw):
-        self.reference_move = reference_move
-        self.max_dtw = max_dtw
+class MotionEvaluator:
+    def __init__(self, reference_motion_name):
+        # 동작 이름
+        self.reference_motion_name = reference_motion_name
+        # 모델에서 모범 동작 및 0점 동작 가져오기
+        self.reference_motion_preprocessed = self.load_reference_move(score_category="reference") # 모범 동작
+        self.zero_score_motion_preprocessed = self.load_reference_move(score_category="zero_score") # 0점 동작
 
         print("평가 준비 완료")
     
-    # 사용자의 데이터를 전처리하는 메서드
-    def preprocess_user_data(self, user_data_df):
-        return preprocess_sensor_data(user_data_df)
+    # db에서 모범 동작 데이터를 불러와서 전처리된 numpy 배열 리스트로 반환하는 메서드
+    def load_reference_move(self, score_category):
+        # 특정 모범 동작 이름과 카테고리가 reference인 것만 가져오기
+        reference_records = MotionRecording.objects.filter(
+            motion_type__name=self.reference_motion_name,
+            score_category=score_category
+        )
+
+        # 전처리된 센서값을 받을 배열
+        preprocessed_motion = []
+
+        for record in reference_records:
+            numpy_data = record.get_sensor_data_as_numpy()
+            if numpy_data.size > 0:
+                preprocessed_motion.append(numpy_data)
+        
+        return preprocessed_motion
     
+    # 사용자의 데이터를 전처리하는 메서드
+    def preprocess_user_data(self, user_raw_data):
+        return preprocess_sensor_data(user_raw_data)
+
+    # 0점 동작을 기반으로 dtw의 최대 거리를 계산하는 메서드
+    def calculate_max_dtw(self):
+        max_distances = []
+
+        # 각 모범 동작과 각 0점 동작 사이의 dtw 거리를 계산
+        for ref_motion in self.reference_motion_preprocessed:
+            for zero_score in self.zero_score_motion_preprocessed:
+                try:
+                    distance = dtw_ndim.distance(ref_motion, zero_score, window=10)
+                    max_distances.append(distance)
+                except Exception as e:
+                    print(f"최대 dtw 계산 중 오류 발생: {e}")
+                    continue
+        
+        if max_distances:
+            # 각 계산된 거리가 담겨있는 배열 중 가장 큰 값을 반환
+            return max(max_distances)
+        else:
+            print("계산된 dtw 거리가 없습니다. 기본값 1000을 반환합니다.")
+            return 1000
+
     # 사용자의 동작을 실제로 평가하는 메인 함수
-    def evaluator_user_movement(self, user_raw_data_df):
+    def evaluator_user_motion(self, user_raw_data):
         # 사용자의 원본 데이터(user_raw_data_df) 전처리
-        preprocessed_user_data = self.preprocess_user_data(user_raw_data_df)
+        preprocessed_user_data = self.preprocess_user_data(user_raw_data)
+
+        # 해당 동작 유형의 모범 동작 데이터가 없는 경우
+        if not self.reference_motion_preprocessed:
+            return "모범 동작 데이터가 없습니다ㅠㅠ"
 
         # 가장 작은 dtw 거리(가장 비슷한 구간)를 찾기 위한 초기값 셋팅
         min_dtw_distance = float("inf") # 무한대를 의미하는 가장 큰 숫자
-        predicted_move = None # 예측된 동작 이름을 저장할 변수
-        results = {} # 모든 모범 동작과의 dtw 거리를 저장할 딕셔너리
 
         # 저장된 모든 모범 동작과 사용자의 동작을 하나씩 비교
-        for move_name, ref_data in self.reference_move.items():
+        for ref_data in self.reference_motion_preprocessed:
             # dtw 라이브러리를 사용하여 두 동작의 다름 정도를 계산
             # window: dtw가 비교할 때 시간적으로 너무 멀어진 데이터끼리 억지로 맞추지 않도록 제한
             distance = dtw_ndim.distance(preprocessed_user_data, ref_data, window=10)
-            results[move_name] = distance # 계산된 거리를 결과 딕셔너리에 저장
 
             # 현재까지 계산된 거리 중에 가장 작은 거리를 동작 찾기
             if distance < min_dtw_distance:
                 min_dtw_distance = distance
-                predicted_move = move_name
-            
+
         # dtw 거리를 0~100% 정확도 점수로 바꾸기
         accuracy_percentage = 0.0 # 초기 정확도 0%
 
-        # 만약에 예측된 동작이 있고, dtw 거리가 무한대가 아니라면
-        if predicted_move and min_dtw_distance != float("inf"):
-            normalized_distance = min_dtw_distance / self.max_dtw
+        # 유효한 dtw 거리가 계산된 경우
+        if min_dtw_distance != float("inf"):
+            # 거리를 0 ~ max_distance 범위로 정규화
+            # min을 통해 정규화된 거리가 1.0을 초과하지 않도록 함
+            normalized_distance = min(min_dtw_distance / self.calculate_max_dtw(), 1.0)
+
+            # 정확도 = 100 - (정규화된 거리 * 100)
+            # ex) 정규화된 거리가 0.1이면 100 - 10 = 90!
+
+            # max: 음수 방지
+            accuracy_percentage = max(0, (1 - normalized_distance)) * 100
+
+            # min: 100초과 방지
+            accuracy_percentage = min(100, accuracy_percentage)
+
+            return {
+                "evaluator_motion_name": self.reference_motion_name,
+                "score": accuracy_percentage,
+            }
+        else:
+            return {"error": "좋버그!!!!!!!", "score": 0}
+        
+if __name__ == "__main__":
+    print("센서 데이터 기반 평가 시스템 시작")
+
+    # --------------------------------------
+
+    # 예시 데이터
+    """
+    {
+        "motionType": "fire_exit",
+        "category": "reference",
+        "sensorData": [
+            {"flex1": 0.1, "flex2": 0.2, ... "flex5": 0.4, "gyro_x": 0.4 ... "gyro_z": 0.3},
+            {"flex1": 0.4, "flex2": 0.6, ... "flex5": 0.3, "gyro_x": 0.2 ... "gyro_z": 0.1},
+            ...
+            {"flex1": 0.1, "flex2": 0.2, ... "flex5": 0.4, "gyro_x": 0.4 ... "gyro_z": 0.3},
+        ]
+    }
+    """
