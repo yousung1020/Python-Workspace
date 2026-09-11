@@ -30,24 +30,48 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 is_bot_ready = False
 
 # 비동기식 request에서 session을 받고 반환하는 함수
-# 추가: 세션 연결에 실패하였을 경우 세 번을 더 세션 연결을 시도함
+# 추가: 세션 연결에 실패하였을 경우 다섯 번까지 세션 연결을 시도함
 async def fetch(session, url, channelIds, name):
+    # 오류 메세지를 보낼 채널 추출
+    if isinstance(channelIds, (list, tuple)):
+        error_channel = channelIds[0] if channelIds else None
+    else:
+        error_channel = channelIds
+
     for attempt in range(5):
         try:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as responce:
-                return await responce.text()
+            async with session.get(
+                url,
+                timeout=aiohttp.ClientTimeout(total=30),
+                headers={"User-Agent": "Mozilla/5.0"}
+            ) as responce:
+                html_info = await responce.text(errors="replace")
+
+                # HTTP 오류 페이지를 정상적인 HTML로 잘못 파싱하지 않게 하기
+                if responce.status != 200:
+                    raise RuntimeError(
+                        f"HTTP 상태 코드가 {responce.status}입니다. "
+                        f"응답 길이: {len(html_info)}"
+                    )
+
+                if not html_info.strip():
+                    raise RuntimeError("빈 응답을 받았습니다.")
+
+                return html_info
                 
-        except aiohttp.ClientConnectorError as err:
-            logger.error(f"연결 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name} 공지 함수")
-            await channelIds[0].send(f"연결 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name} 공지 함수")
+        except (aiohttp.ClientError, RuntimeError) as err:
+            logger.error(f"연결 또는 응답 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 5)\n오류가 발생된 함수: {name} 함수")
+            if error_channel is not None:
+                await error_channel.send(f"연결 또는 응답 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 5)\n오류가 발생된 함수: {name} 함수")
             await asyncio.sleep(15)
             
         except asyncio.TimeoutError as err:
-            logger.error(f"타임아웃 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name} 함수")
-            await channelIds[0].send(f"타임아웃 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 3)\n오류가 발생된 함수: {name} 함수")
+            logger.error(f"타임아웃 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 5)\n오류가 발생된 함수: {name} 함수")
+            if error_channel is not None:
+                await error_channel.send(f"타임아웃 오류가 발생하였습니다. : {str(err)} (재시도: {attempt + 1} / 5)\n오류가 발생된 함수: {name} 함수")
             await asyncio.sleep(15)
 
-    raise Exception("세션 연결에 실패하였습니다.")
+    raise RuntimeError("세션 연결에 실패하였습니다.")
 
 # -------------------------------------------------------------------------------------------------
 # 공지사항 관련 항목들을 관리하는 클래스
@@ -265,6 +289,45 @@ class Notice:
 # ------------------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------------------------
+# 식단표 HTML 구조를 확인하고 한식 메뉴 행을 추출하는 함수
+def get_korean_menu_info(soup_meal):
+    # 식단표 테이블 추출
+    table_meal = soup_meal.select_one(".dietWrap .table_1 table")
+
+    if table_meal is None:
+        raise ValueError("식단표 테이블을 찾지 못했습니다.")
+
+    # 식단표의 요일 헤더 추출
+    headers_meal = table_meal.select("thead th")
+
+    if not headers_meal:
+        raise ValueError("식단표 요일 헤더를 찾지 못했습니다.")
+
+    # 한식 메뉴 제목 다음에 있는 메뉴 행 추출
+    rows_meal = table_meal.select("tbody tr")
+    korean_menu_row = None
+
+    for i, row in enumerate(rows_meal):
+        title = row.find("td", attrs={"class": "tit"})
+
+        if title is not None and "한식 메뉴" in title.get_text(" ", strip=True):
+            if i + 1 < len(rows_meal):
+                korean_menu_row = rows_meal[i + 1]
+            break
+
+    if korean_menu_row is None:
+        raise ValueError("한식 메뉴 행을 찾지 못했습니다.")
+
+    menu_cells = korean_menu_row.find_all("td", recursive=False)
+
+    if len(menu_cells) != len(headers_meal):
+        raise ValueError(
+            f"요일 수와 메뉴 셀 수가 다릅니다. 요일: {len(headers_meal)}, 메뉴: {len(menu_cells)}"
+        )
+
+    return headers_meal, menu_cells
+
+
 # 식단표 알림 기능을 하는 클래스
 class Menu:
     def __init__(self, channelIds):
@@ -283,11 +346,23 @@ class Menu:
             meal_info = await fetch(session, "https://www.dongyang.ac.kr/dmu/4902/subview.do", channelId_for_test, "식단표 함수")
 
         soup_meal = BeautifulSoup(meal_info, "lxml")
-        meal_info = soup_meal.find_all("tr", attrs={"class" : ""})
-        del meal_info[0:2]
-        meal_info = meal_info[0].find("td", attrs={"class": "highlight"}).get_text().strip().replace("[점심]", "")
+        headers_meal, menu_cells = get_korean_menu_info(soup_meal)
+        today = datetime.now().strftime("%Y.%m.%d")
+        today_index = None
 
-        if meal_info != "-":
+        for i, header in enumerate(headers_meal):
+            if today in header.get_text(" ", strip=True):
+                today_index = i
+                break
+
+        # 토요일과 일요일은 식단표에 해당 날짜 열이 없음
+        if today_index is None:
+            logger.info("오늘 날짜에 해당하는 식단표가 없습니다.")
+            return
+
+        meal_info = menu_cells[today_index].get_text(" ", strip=True).replace("[점심]", "").strip()
+
+        if meal_info != "-" and meal_info:
             menu = await self.menu_msg_format(meal_info)
             for channel in self.channelIds:
                 await channel.send(menu)
@@ -298,22 +373,28 @@ class Menu:
 
     # 하루에 한 번씩만 호출되게끔 하는 스케쥴링 함수
     async def schedule_today_meal(self):
-        now = datetime.now()
-        target_time = datetime.combine(now.date(), time(9, 0))
-            
-        # 코드를 재가동 했을 때의 시간이 오전 9시 이후라면, 목표 시간을 다음 날로 설정
-        if now >= target_time:
-            target_time += timedelta(days=1)
-            
-        delay = (target_time - now).total_seconds()  # 다음 실행까지의 대기 시간(초 단위)
-        print(str(float((delay / 60) / 60)) + "시간 기다린 후에 해당 식단표 함수 가동")
-        await asyncio.sleep(delay)
-        await self.today_menu()
-            
-        # 처음 실행 후에는 24시간마다 실행
         while True:
-            await asyncio.sleep(24 * 60 * 60)
-            await self.today_menu()
+            now = datetime.now()
+            target_time = datetime.combine(now.date(), time(9, 0))
+
+            # 코드를 재가동 했을 때의 시간이 오전 9시 이후라면, 목표 시간을 다음 날로 설정
+            if now >= target_time:
+                target_time += timedelta(days=1)
+
+            delay = (target_time - now).total_seconds()  # 다음 실행까지의 대기 시간(초 단위)
+            print(str(float((delay / 60) / 60)) + "시간 기다린 후에 해당 식단표 함수 가동")
+            await asyncio.sleep(delay)
+
+            # 식단표 서버 오류 또는 HTML 구조 오류가 발생하면 당일에 다시 시도
+            while True:
+                try:
+                    await self.today_menu()
+                    break
+
+                except Exception as err_msg:
+                    logger.error(f"식단표 처리 중 오류가 발생하였습니다: {str(err_msg)}")
+                    logger.error(traceback.format_exc())
+                    await asyncio.sleep(10 * 60)
 # --------------------------------------------------------------------------------------------------
 
 @bot.event
@@ -403,19 +484,17 @@ async def meal(ctx):
         meal_info = await fetch(session, "https://www.dongyang.ac.kr/dmu/4902/subview.do", channelId_for_test, "식단표 함수")
 
     soup_meal = BeautifulSoup(meal_info, "lxml")
-    meal_info = soup_meal.find_all("tr", attrs={"class" : ""})
-    del meal_info[0:2]
-    meal_info = meal_info[0].find_all("td")
+    headers_meal, menu_cells = get_korean_menu_info(soup_meal)
     div_meal = []
-    
+
     # 메뉴가 비어있으면 (-) 메뉴가 없다고 하기
-    if meal_info != "-":
-        for i in meal_info:
-            div_meal.append(i.get_text().strip().replace("[점심]", ""))
-    
-    else:
-        for div_meal in meal_info:
+    for i in menu_cells:
+        menu = i.get_text(" ", strip=True).replace("[점심]", "").strip()
+
+        if menu == "-" or not menu:
             div_meal.append("메뉴가 없습니다! 😱")
+        else:
+            div_meal.append(menu)
 
     info_msg = (
         "📌 이번주 식단표는 다음과 같습니다. 📌\n\n"
