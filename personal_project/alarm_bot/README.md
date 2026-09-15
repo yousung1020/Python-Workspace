@@ -24,20 +24,33 @@
 
 1.  **필수 라이브러리 설치**:
     ```bash
-    pip install discord.py
+    pip install -r requirements.txt
     ```
-2.  **봇 토큰 설정**:
-    * Discord 개발자 포털에서 봇을 생성하고 토큰을 발급받습니다.
-    * `newAlramBot.py` 파일 내 `TOKEN = "YOUR_BOT_TOKEN"` 부분에 발급받은 봇 토큰을 입력합니다.
-3.  **채널 ID 설정**:
-    * 알림을 보낼 Discord 채널의 ID를 확인합니다.
-    * `CHANNEL_ID = YOUR_CHANNEL_ID` 부분에 해당 채널 ID를 입력합니다.
+2.  **환경변수 파일 생성**:
+    * `.env.example` 파일을 복사하여 `.env` 파일을 생성합니다.
+    ```bash
+    cp .env.example .env
+    ```
+    * `.env`에 Discord 봇 토큰과 채널 ID를 입력합니다.
+    * `.env` 파일은 외부에 공개하거나 Git에 commit하지 않습니다.
+3.  **환경변수 항목**:
+    * `DISCORD_BOT_TOKEN`: Discord 개발자 포털에서 발급받은 봇 토큰
+    * `TEST_CHANNEL_ID`: 테스트 및 오류 메세지를 보낼 채널 ID
+    * `ICE_CHANNEL_ID`: 정통과 공지 채널 ID
+    * `CSE_CHANNEL_ID`: 컴소과 공지 채널 ID
+    * `MENU_ICE_CHANNEL_ID`: 정통과 식단표 채널 ID
+    * `MENU_CSE_CHANNEL_ID`: 컴소과 식단표 채널 ID
+    * `NOTICE_STATE_FILE`: 공지사항 상태 저장 파일 경로(선택사항)
 4.  **봇 실행**:
     ```bash
     python newAlramBot.py
     ```
 
+    `.env`는 `newAlramBot.py`와 같은 디렉터리에 두면 됩니다.
+
 ## ⚠️ 주의사항
 
 * 봇 토큰은 외부에 노출되지 않도록 주의해야 합니다. 환경 변수로 관리하는 것을 권장합니다.
 * 채널 ID는 봇이 메시지를 보낼 수 있는 권한이 있는 채널이어야 합니다.
+* `python-dotenv` 라이브러리가 필요합니다.
+* 공지사항 비교 상태는 기본적으로 `bot_data/notice_state.json`에 저장됩니다.

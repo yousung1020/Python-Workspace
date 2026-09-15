@@ -9,6 +9,14 @@ import re
 import aiohttp
 import asyncio
 import traceback
+import os
+import json
+import tempfile
+from dotenv import load_dotenv
+
+# 환경변수 파일 불러오기
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+load_dotenv(env_path)
 
 # 로깅 사전 설정
 logger = logging.getLogger("alarm_bot") # logger 객체 생성
@@ -18,13 +26,124 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s') # 로
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-# push 할 때는 꼭 토큰 값 삭제하기!
-token = ''
+# Discord 봇 토큰 및 채널 ID를 환경변수에서 불러오는 함수
+def get_required_channel_id(env_name):
+    channel_id = os.getenv(env_name)
+
+    if channel_id is None or channel_id.strip() == "":
+        raise RuntimeError(f"{env_name} 환경변수가 없습니다.")
+
+    try:
+        return int(channel_id)
+    except ValueError:
+        raise RuntimeError(f"{env_name} 환경변수는 숫자여야 합니다.")
+
+
+token = os.getenv("DISCORD_BOT_TOKEN")
+
+if token is None or token.strip() == "":
+    raise RuntimeError("DISCORD_BOT_TOKEN 환경변수가 없습니다.")
+
+token = token.strip()
+
+channel_id_config = {
+    "test": get_required_channel_id("TEST_CHANNEL_ID"),
+    "ice": get_required_channel_id("ICE_CHANNEL_ID"),
+    "cse": get_required_channel_id("CSE_CHANNEL_ID"),
+    "menu_ice": get_required_channel_id("MENU_ICE_CHANNEL_ID"),
+    "menu_cse": get_required_channel_id("MENU_CSE_CHANNEL_ID")
+}
+
+# 공지사항 상태 파일 경로 설정
+notice_state_file = os.getenv(
+    "NOTICE_STATE_FILE",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "bot_data", "notice_state.json")
+)
+
+if not os.path.isabs(notice_state_file):
+    notice_state_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), notice_state_file)
 
 # 봇 인스턴스 생성
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+
+# 환경변수로 설정된 Discord 채널을 불러오는 함수
+def get_configured_channel(channel_id, channel_name):
+    channel = bot.get_channel(channel_id)
+
+    if channel is None:
+        raise RuntimeError(f"{channel_name} 채널을 찾지 못했습니다. 채널 ID를 확인해주세요.")
+
+    return channel
+
+
+# 공지사항 상태를 불러오는 함수
+def load_notice_state(board_name):
+    if not os.path.exists(notice_state_file):
+        return None
+
+    try:
+        with open(notice_state_file, "r", encoding="utf-8") as state_file:
+            state = json.load(state_file)
+
+        if not isinstance(state, dict):
+            raise json.JSONDecodeError("상태 파일 형식이 올바르지 않습니다.", "", 0)
+
+        if not isinstance(state.get("boards", {}), dict):
+            raise json.JSONDecodeError("게시판 상태 형식이 올바르지 않습니다.", "", 0)
+
+        return state.get("boards", {}).get(board_name)
+
+    except (OSError, json.JSONDecodeError) as err:
+        logger.error(f"{board_name} 공지사항 상태 파일을 읽지 못했습니다: {str(err)}")
+        return None
+
+
+# 공지사항 상태를 저장하는 함수
+def save_notice_state(board_name, board_state):
+    state_directory = os.path.dirname(notice_state_file)
+    os.makedirs(state_directory, exist_ok=True)
+
+    state = {"version": 1, "boards": {}}
+
+    if os.path.exists(notice_state_file):
+        try:
+            with open(notice_state_file, "r", encoding="utf-8") as state_file:
+                state = json.load(state_file)
+
+            if not isinstance(state, dict):
+                state = {"version": 1, "boards": {}}
+        except (OSError, json.JSONDecodeError) as err:
+            logger.error(f"기존 공지사항 상태 파일을 읽지 못했습니다: {str(err)}")
+            state = {"version": 1, "boards": {}}
+
+    state.setdefault("version", 1)
+    state.setdefault("boards", {})
+    state["boards"][board_name] = board_state
+
+    temporary_file = None
+
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=state_directory,
+            prefix="notice_state_",
+            suffix=".tmp",
+            delete=False
+        ) as state_file:
+            json.dump(state, state_file, ensure_ascii=False, indent=2)
+            temporary_file = state_file.name
+
+        os.replace(temporary_file, notice_state_file)
+
+    except OSError as err:
+        logger.error(f"{board_name} 공지사항 상태 파일을 저장하지 못했습니다: {str(err)}")
+
+        if temporary_file is not None and os.path.exists(temporary_file):
+            os.remove(temporary_file)
 
 # 함수 중복 호출 방지 플래그
 is_bot_ready = False
@@ -94,198 +213,281 @@ class Notice:
         else:
             return
     
+    # 공지사항 목록의 행을 추출하는 함수
+    def get_notice_rows(self, soup_notice):
+        # 공지사항 테이블을 먼저 찾고, 없으면 모든 tr 태그를 찾음
+        notice_table = soup_notice.select_one("table.board-table")
+
+        if notice_table is None:
+            notice_rows = soup_notice.find_all("tr")
+        else:
+            notice_rows = notice_table.find_all("tr")
+
+        valid_rows = []
+
+        for row in notice_rows:
+            number_cell = row.find("td", attrs={"class": "td-num"})
+
+            if number_cell is None:
+                continue
+
+            notice_number = re.sub(r"\s+", "", number_cell.get_text())
+
+            # 고정 공지의 '공지' 행은 제외하고 숫자형 공지만 추출
+            if notice_number.isdigit():
+                valid_rows.append(row)
+
+        if not valid_rows:
+            raise ValueError("공지사항 행을 찾지 못했습니다.")
+
+        return valid_rows
+
+    # 공지사항 목록의 고유 정보들을 추출하는 함수
+    def get_notice_list(self, soup_notice):
+        notice_rows = self.get_notice_rows(soup_notice)
+        notice_list = []
+
+        for row in notice_rows:
+            number_cell = row.find("td", attrs={"class": "td-num"})
+            subject_cell = row.find("td", attrs={"class": "td-subject"})
+            notice_link = row.find("a", href=True)
+
+            if number_cell is None or subject_cell is None or notice_link is None:
+                raise ValueError("공지사항 필수 정보를 찾지 못했습니다.")
+
+            number = re.sub(r"\s+", "", number_cell.get_text())
+            href = notice_link["href"]
+
+            if self.name == "대학":
+                title_cell = row.find("strong")
+
+                if title_cell is None:
+                    title_cell = subject_cell
+
+                title = re.sub(r"\s+", " ", title_cell.get_text()).strip()
+
+                if href.startswith("http"):
+                    notice_url = href
+                else:
+                    notice_url = f"https://www.dongyang.ac.kr{href}"
+
+                notice_url += "&layout=unknown" if "?" in notice_url else "?layout=unknown"
+
+            else:
+                title = re.sub(r"\s+", " ", subject_cell.get_text()).strip()
+                js_splits = re.findall("'([^']*)'", href)
+
+                if len(js_splits) < 4:
+                    raise ValueError("학과 공지 URL 정보를 해석하지 못했습니다.")
+
+                notice_url = f"https://www.dongyang.ac.kr/combBbs/{js_splits[0]}/{js_splits[1]}/{js_splits[3]}/view.do?layout=unknown"
+
+            notice_list.append({
+                "id": href,
+                "number": number,
+                "title": title,
+                "url": notice_url
+            })
+
+        return notice_list
+
     # 대학 공지 url 및 제목을 추출하는 함수
-    async def get_univer_notice_info(self, soup_univer_compared):
-
-        # 대학 공지 제목 추출
-        title_univer = soup_univer_compared.find_all('tr', attrs={'class':''})
-        del title_univer[0]
-        title_raw_univer = title_univer[0].find('strong').get_text().replace("\n", "")
-        title_raw_univer = re.sub(r'\s+', ' ', title_raw_univer).strip()
-        title_university = f"📜 제목: {title_raw_univer}"
-
-        # 대학 공지 url 추출
-        a1 = title_univer[0].find('a')
-        link1_before = a1['href']
-        link1_after = f"\nhttps://www.dongyang.ac.kr{link1_before}?layout=unknown \n"
+    async def get_univer_notice_info(self, notice):
+        title_university = f"📜 제목: {notice['title']}"
+        link1_after = f"\n{notice['url']} \n"
         banner_university = f"📌 새로운 {self.name} 공지가 올라왔습니다! 📌\n\n"
 
         for channel in self.channelIds:
             await channel.send(banner_university + title_university + link1_after)
 
     # 학과 공지 url 및 제목을 추출하는 함수
-    async def get_major_notice_info(self, soup_major_compared):
-
-        major_info =  soup_major_compared.find_all('tr', attrs={'class':''})
-        del major_info[0]
-
-        # 학과 공지 제목 추출
-        title_major_raw = major_info[0].find('td', attrs={'class':'td-subject'})
-        divide = title_major_raw.get_text().split()
-
-        title_major = "📜 제목: "
-        
-        for i in divide:
-            title_major += i + ' '
-
-        # 학과 공지 url 추출
-        a = major_info[0].find('a')
-        js_splits = re.findall("'([^']*)'", a['href'])
-        link2 = f"\nhttps://www.dongyang.ac.kr/combBbs/{js_splits[0]}/{js_splits[1]}/{js_splits[3]}/view.do?layout=unknown \n"
-
+    async def get_major_notice_info(self, notice):
+        title_major = f"📜 제목: {notice['title']}"
+        link2 = f"\n{notice['url']} \n"
         banner_major = f"📌 새로운 {self.name} 공지가 올라왔습니다! 📌\n\n"
 
         for channel in self.channelIds:
             await channel.send(banner_major + title_major + link2)
 
+    # 신규 공지를 오래된 순서대로 보내는 함수
+    async def send_new_notices(self, notices):
+        if len(notices) > 1:
+            for channel in self.channelIds:
+                await channel.send(f"📌 {len(notices)}개의 새로운 {self.name} 공지를 순서대로 전송합니다. 📌")
+
+        # 공지사항 페이지는 최신 공지부터 표시되므로 역순으로 전송
+        for notice in reversed(notices):
+            if self.name == "대학":
+                await self.get_univer_notice_info(notice)
+            else:
+                await self.get_major_notice_info(notice)
+
+            await asyncio.sleep(1)
+
+    # 이전 공지사항과 현재 공지사항의 차이를 계산하는 함수
+    def get_notice_changes(self, previous_notices, current_notices):
+        previous_ids = {notice["id"] for notice in previous_notices}
+        current_ids = {notice["id"] for notice in current_notices}
+
+        new_notices = [
+            notice for notice in current_notices
+            if notice["id"] not in previous_ids
+        ]
+        missing_notices = [
+            notice for notice in previous_notices
+            if notice["id"] not in current_ids
+        ]
+
+        return new_notices, missing_notices
+
+    # 삭제된 공지사항이 실제로 삭제되었는지 확인하는 함수
+    async def check_notice_exists(self, notice):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    notice["url"],
+                    timeout=aiohttp.ClientTimeout(total=30),
+                    headers={"User-Agent": "Mozilla/5.0"}
+                ) as responce:
+                    html_info = await responce.text(errors="replace")
+
+                    if responce.status == 404:
+                        return False
+
+                    if responce.status != 200:
+                        return None
+
+                    error_messages = [
+                        "게시물에 접근할 수 없습니다",
+                        "내용보기할 권한이 없습니다",
+                        "존재하지 않는 게시물",
+                        "페이지를 찾을 수 없습니다"
+                    ]
+
+                    for error_message in error_messages:
+                        if error_message in html_info:
+                            return False
+
+                    if notice["title"] in BeautifulSoup(html_info, "lxml").get_text(" ", strip=True):
+                        return True
+
+                    if notice["number"] in html_info:
+                        return True
+
+                    return None
+
+        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+            logger.error(f"{self.name} 공지 삭제 여부 확인 중 오류가 발생하였습니다: {str(err)}")
+            return None
+
+    # 공지사항 목록을 주기적으로 확인하는 함수
+    async def monitor_notices(self):
+        saved_state = load_notice_state(self.name)
+
+        if (
+            saved_state is None
+            or not isinstance(saved_state.get("notices"), list)
+            or not saved_state.get("notices")
+        ):
+            previous_notices = None
+            missing_candidates = {}
+        else:
+            previous_notices = saved_state.get("notices", [])
+            missing_candidates = saved_state.get("missing_candidates", {})
+
+            if not isinstance(missing_candidates, dict):
+                missing_candidates = {}
+
+        while True:
+            await self.pause_night()
+
+            try:
+                async with aiohttp.ClientSession() as session:
+                    html_info = await fetch(session, self.url, self.channelIds, self.name)
+
+                soup_notice = BeautifulSoup(html_info, "lxml")
+                current_notices = self.get_notice_list(soup_notice)
+
+                # 최초 실행 시 현재 목록을 기준으로만 저장
+                if previous_notices is None:
+                    previous_notices = current_notices
+                    missing_candidates = {}
+                    save_notice_state(self.name, {
+                        "notices": previous_notices,
+                        "missing_candidates": missing_candidates,
+                        "updated_at": datetime.now().isoformat(timespec="seconds")
+                    })
+                    logger.info(f"{self.name} 공지사항 초기 상태를 저장했습니다.")
+                    await asyncio.sleep(60.0)
+                    continue
+
+                new_notices, missing_notices = self.get_notice_changes(
+                    previous_notices,
+                    current_notices
+                )
+
+                if new_notices:
+                    await self.send_new_notices(new_notices)
+
+                next_missing_candidates = {}
+                pending_notices = []
+
+                for previous_notice in missing_notices:
+                    notice_id = previous_notice["id"]
+
+                    notice_exists = await self.check_notice_exists(previous_notice)
+
+                    if notice_exists is True:
+                        # 첫 페이지에서 다음 페이지로 이동한 공지
+                        continue
+
+                    if notice_exists is False:
+                        missing_count = int(missing_candidates.get(notice_id, 0)) + 1
+
+                        if missing_count >= 2:
+                            logger.info(f"📌 {previous_notice['number']}번 {self.name} 공지가 삭제되었습니다. 📌")
+
+                            for channel in self.channelIds:
+                                await channel.send(
+                                    f"📌 {previous_notice['number']}번 {self.name} 공지가 삭제되었습니다. 📌\n"
+                                )
+                            continue
+
+                        next_missing_candidates[notice_id] = missing_count
+                        pending_notices.append(previous_notice)
+
+                    else:
+                        # 응답이 불확실하면 삭제로 판단하지 않음
+                        next_missing_candidates[notice_id] = missing_candidates.get(notice_id, 0)
+                        pending_notices.append(previous_notice)
+
+                previous_notices = current_notices + pending_notices
+                missing_candidates = next_missing_candidates
+
+                save_notice_state(self.name, {
+                    "notices": previous_notices,
+                    "missing_candidates": missing_candidates,
+                    "updated_at": datetime.now().isoformat(timespec="seconds")
+                })
+
+                logger.info(
+                    f"현재 {self.name} 공지 이전 공지 수와 현재 공지 수\n"
+                    f"{len(previous_notices)} || {len(current_notices)}"
+                )
+
+            except Exception as err_msg:
+                logger.error(f"{self.name} 공지사항 확인 중 오류가 발생하였습니다: {str(err_msg)}")
+                logger.error(traceback.format_exc())
+
+            await asyncio.sleep(60.0)
+
     # 대학 공지에 대한 비동기 함수
     async def univer_notice(self):
-        while True:
-            async with aiohttp.ClientSession() as session:
-                html_info = await fetch(session, self.url, self.channelIds, self.name)
-
-            soup_univer = BeautifulSoup(html_info, 'lxml')
-            univer_num = soup_univer.find_all('tr', attrs={'class':''})
-            del univer_num[0]
-            univer_num = univer_num[0].find("td", class_="td-num").get_text()
-            univer_num = int(univer_num)
-
-            while True:
-                await self.pause_night()
-                
-                async with aiohttp.ClientSession() as session:
-                    html_info_compared = await fetch(session, self.url, self.channelIds, self.name)
-
-                soup_univer_compared = BeautifulSoup(html_info_compared, 'lxml')
-                univer_num_compared = soup_univer_compared.find_all('tr', attrs={'class':''})
-                del univer_num_compared[0]
-                univer_num_compared = univer_num_compared[0].find("td", class_="td-num").get_text()
-                univer_num_compared = int(univer_num_compared)
-                now = datetime.now()
-
-                print("-------------------------------------------------------------------------------------")
-                print(f"현재 {self.name} 공지 univer_num 값과 univer_num_compared 값\n" + str(univer_num), "||", univer_num_compared, "||",now)
-                print("-------------------------------------------------------------------------------------\n")
-                logger.info(f"현재 {self.name} 공지 univer_num 값과 univer_num_compared 값\n{univer_num} || {univer_num_compared}")
-
-                if (univer_num_compared == univer_num + 1):
-                    await self.get_univer_notice_info(soup_univer_compared)
-                    break
-                        
-                elif(univer_num_compared > univer_num + 1):
-                    target = int(univer_num_compared - univer_num)
-
-                    await self.get_univer_notice_info(soup_univer_compared)
-                    
-                    for channel in self.channelIds:
-                        await channel.send(f"📌 {target-1}개의 건너뛰어진 공지사항이 있습니다. 📌")
-
-                    for i in range(target-1):
-                        title_univer = soup_univer_compared.find_all('tr', attrs={'class':''})
-                        title_univer.pop(0)
-                        title_raw_univer = title_univer[i+1].find('strong').get_text()
-                        title_university = f"제목: {title_raw_univer}"
-
-                        a1 = title_univer[i+1].find('a')
-                        link1_before = a1['href']
-                        link1_after = f"\nhttps://www.dongyang.ac.kr{link1_before}?layout=unknown \n"
-                        banner_university = "📌 새로운 대학 공지가 올라왔습니다! 📌\n\n"
-
-                        for channel in self.channelIds:
-                            await channel.send(banner_university + title_university + link1_after)
-                        await asyncio.sleep(1)
-
-                    break
-
-                elif (univer_num_compared < univer_num):
-                    logger.info(f"📌 {univer_num}번 대학 공지가 삭제되었습니다. 📌")
-                        
-                    for channel in self.channelIds:
-                        await channel.send(f"📌 {univer_num}번 대학 공지가 삭제되었습니다. 📌\n")
-                    break
-                        
-                await asyncio.sleep(60.0)
-            await asyncio.sleep(5)
+        await self.monitor_notices()
 
     # 학과 공지(정통, 컴소과)에 대한 비동기 함수
     async def major_notice(self):
-        while True:
-            async with aiohttp.ClientSession() as session:
-                html_info = await fetch(session, self.url, self.channelIds, self.name)
-
-            soup_major = BeautifulSoup(html_info, 'lxml')
-            major_num = soup_major.find_all('tr', attrs={'class':""})
-            del major_num[0]
-            major_num = int(major_num[0].find("td", class_="td-num").get_text().replace(" ", "").replace("\n", ""))
-            now = datetime.now()
-
-            while True:
-                await self.pause_night()
-
-                async with aiohttp.ClientSession() as session:
-                    html_info_compared = await fetch(session, self.url, self.channelIds, self.name)
-
-                soup_major_compared = BeautifulSoup(html_info_compared, 'lxml')
-                major_num_compared = soup_major_compared.find_all('tr', attrs={'class':''})
-                del major_num_compared[0]
-                major_num_compared = int(major_num_compared[0].find("td", class_="td-num").get_text().replace(" ", "").replace("\n", ""))
-                
-                now = datetime.now()
-
-                print("-------------------------------------------------------------------------------------")
-                print(f"현재 {self.name} 공지 major_num 값과 major_num_compared 값\n" + str(major_num), "||", major_num_compared, "||",now)
-                print("-------------------------------------------------------------------------------------\n")
-                logger.info(f"현재 {self.name} 공지 major_num 값과 major_num_compared 값\n{major_num} || {major_num}")
-
-                if (major_num_compared == major_num + 1):
-                    await self.get_major_notice_info(soup_major_compared)
-                    break
-
-                elif(major_num_compared > major_num + 1):
-                    target = int(major_num_compared - major_num)
-
-                    await self.get_major_notice_info(soup_major_compared)
-
-                    for channel in self.channelIds:
-                        await channel.send(f"📌 안내: {target-1}개의 건너뛰어진 공지사항이 있습니다. 📌")
-
-                    for i in range(target-1):
-
-                        # 컴소과 공지 제목 추출
-                        title_major_raw = soup_major_compared.find_all('td', attrs={'class':'td-subject'})
-                        del title_major_raw[0]
-                        divide = title_major_raw[i+1].get_text().split()
-
-                        title_major = '제목: '
-            
-                        for j in divide:
-                            title_major += j + ' '
-
-                        # 컴소과 공지 url 추출
-                        tr2 = soup_major_compared.find_all('tr', attrs={'class':''})
-                        tr2.pop(0)
-                        a = tr2[i+1].find('a')
-                        js_splits = re.findall("'([^']*)'", a['href'])
-                        link2 = f"\nhttps://www.dongyang.ac.kr/combBbs/{js_splits[0]}/{js_splits[1]}/{js_splits[3]}/view.do?layout=unknown \n"
-                        banner_major = f"{i+1}.\n"
-
-                        for channel in self.channelIds:
-                            await channel.send(banner_major + title_major + link2)
-
-                        await asyncio.sleep(1)
-
-                    break
-                    
-                elif (major_num_compared < major_num):
-                    logger.info(f"📌 {major_num}번 {self.name} 공지가 삭제되었습니다. 📌")
-
-                    for channel in self.channelIds:
-                        await channel.send(f"📌 {major_num}번 {self.name} 공지가 삭제되었습니다. 📌\n")
-
-                    break
-
-                await asyncio.sleep(60.0)
-            await asyncio.sleep(5)
+        await self.monitor_notices()
 # ------------------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------------------------
@@ -341,9 +543,9 @@ class Menu:
 
     # 식단 메뉴에 대한 비동기 함수
     async def today_menu(self):
-        channelId_for_test = bot.get_channel(1350807050162274327) # 여기에 테스트 채널 id 입력
+        channelId_for_error = get_configured_channel(channel_id_config["cse"], "컴소과")
         async with aiohttp.ClientSession() as session:
-            meal_info = await fetch(session, "https://www.dongyang.ac.kr/dmu/4902/subview.do", channelId_for_test, "식단표 함수")
+            meal_info = await fetch(session, "https://www.dongyang.ac.kr/dmu/4902/subview.do", channelId_for_error, "식단표 함수")
 
         soup_meal = BeautifulSoup(meal_info, "lxml")
         headers_meal, menu_cells = get_korean_menu_info(soup_meal)
@@ -407,14 +609,14 @@ async def on_ready():
 
     logger.info("on_ready 함수가 호출되었습니다.")
 
-    # 채널 id 입력, 채널 변수가 더 필요할 경우 추가할 것
-    channelId_for_test = bot.get_channel(1041374554368520232) # 테스트 채널 id 입력
-    channelId_for_ice = bot.get_channel(1016710195398848524) # 정통과 채널 id 입력
-    channelId_for_cse = bot.get_channel(1350807050162274327) # 컴소과 채널 id 입력
+    # 환경변수에 설정된 채널 id로 채널을 불러옴
+    channelId_for_test = get_configured_channel(channel_id_config["test"], "테스트")
+    channelId_for_ice = get_configured_channel(channel_id_config["ice"], "정통과")
+    channelId_for_cse = get_configured_channel(channel_id_config["cse"], "컴소과")
 
     # 식단표 메뉴를 보낼 채널 id 입력
-    channelId_for_menu_ice = bot.get_channel(1344666105762943046) # 정통과 식단표 채널
-    channelId_for_menu_cse = bot.get_channel(1350807234703265842) # 컴소과 식단표 채널
+    channelId_for_menu_ice = get_configured_channel(channel_id_config["menu_ice"], "정통과 식단표")
+    channelId_for_menu_cse = get_configured_channel(channel_id_config["menu_cse"], "컴소과 식단표")
 
     channelIds_univer = [channelId_for_test, channelId_for_ice, channelId_for_cse] # 대학 공지를 보낼 채널 입력
     channelIds_CSE = [channelId_for_test, channelId_for_cse] # 컴소과 공지를 보낼 채널 입력
@@ -479,7 +681,7 @@ async def on_ready():
 # !식단표 라는 명령어를 입력했을 때
 @bot.command(name="식단표")
 async def meal(ctx):
-    channelId_for_test = bot.get_channel(1041374554368520232) # 여기에 테스트 채널 id 입력
+    channelId_for_test = get_configured_channel(channel_id_config["test"], "테스트")
     async with aiohttp.ClientSession() as session:
         meal_info = await fetch(session, "https://www.dongyang.ac.kr/dmu/4902/subview.do", channelId_for_test, "식단표 함수")
 
