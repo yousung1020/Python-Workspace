@@ -357,21 +357,26 @@ class Notice:
                     if responce.status != 200:
                         return None
 
+                    # 대학 게시판은 '원하시는 페이지를 찾을 수가 없습니다',
+                    # 학과 게시판은 '게시물이(가) 없습니다.' 문구로 삭제된 글을 표시함
                     error_messages = [
                         "게시물에 접근할 수 없습니다",
                         "내용보기할 권한이 없습니다",
                         "존재하지 않는 게시물",
-                        "페이지를 찾을 수 없습니다"
+                        "페이지를 찾을 수 없습니다",
+                        "페이지를 찾을 수가 없습니다",
+                        "게시물이(가) 없습니다"
                     ]
 
                     for error_message in error_messages:
                         if error_message in html_info:
                             return False
 
-                    if notice["title"] in BeautifulSoup(html_info, "lxml").get_text(" ", strip=True):
-                        return True
+                    # 공지 번호는 짧은 숫자라 페이지 어디에나 포함될 수 있으므로 제목으로만 확인
+                    # 목록 제목과 같은 방식으로 공백(\xa0 포함)을 정규화한 뒤 비교
+                    page_text = re.sub(r"\s+", " ", BeautifulSoup(html_info, "lxml").get_text(" ", strip=True))
 
-                    if notice["number"] in html_info:
+                    if notice["title"] in page_text:
                         return True
 
                     return None
