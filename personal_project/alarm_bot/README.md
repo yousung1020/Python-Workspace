@@ -43,10 +43,37 @@
     * `NOTICE_STATE_FILE`: 공지사항 상태 저장 파일 경로(선택사항)
 4.  **봇 실행**:
     ```bash
-    python newAlramBot.py
+    python src/newAlramBot.py
     ```
 
-    `.env`는 `newAlramBot.py`와 같은 디렉터리에 두면 됩니다.
+    * `.env`와 `bot_data/`는 `src/`가 아닌 프로젝트 루트에 배치합니다.
+    * 로그는 실행한 위치의 `bot_log/`에 기록되므로, 프로젝트 루트에 `bot_log/`를 만든 뒤 루트에서 실행합니다.
+
+## 📁 디렉터리 구조
+
+```
+alarm_bot/
+├── src/newAlramBot.py   # 봇 본체
+├── test/                # pytest 테스트와 게시판 HTML 픽스처
+├── practice/            # 봇에서 사용하지 않는 연습용 스크립트
+├── requirements.txt
+├── .env.example
+└── README.md
+```
+
+## 🧪 테스트 실행 방법
+
+테스트는 `test/` 디렉터리에 있으며, 실제 `.env`의 토큰·채널·상태 파일을 사용하지 않습니다.
+
+```bash
+pip install -r test/requirements.txt
+
+# 오프라인 테스트: test/fixtures의 실제 게시판 HTML을 로컬 서버로 응답
+pytest test/
+
+# 실서버 테스트: 학교 게시판에 실제로 요청하여 HTML 구조 변경 여부 확인
+pytest test/ -m live
+```
 
 ## ⚠️ 주의사항
 

@@ -14,8 +14,11 @@ import json
 import tempfile
 from dotenv import load_dotenv
 
+# 프로젝트 루트 경로 (src/의 상위 디렉터리, .env와 bot_data/의 기준 위치)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # 환경변수 파일 불러오기
-env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+env_path = os.path.join(BASE_DIR, ".env")
 load_dotenv(env_path)
 
 # 로깅 사전 설정
@@ -57,11 +60,11 @@ channel_id_config = {
 # 공지사항 상태 파일 경로 설정
 notice_state_file = os.getenv(
     "NOTICE_STATE_FILE",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "bot_data", "notice_state.json")
+    os.path.join(BASE_DIR, "bot_data", "notice_state.json")
 )
 
 if not os.path.isabs(notice_state_file):
-    notice_state_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), notice_state_file)
+    notice_state_file = os.path.join(BASE_DIR, notice_state_file)
 
 # 봇 인스턴스 생성
 intents = discord.Intents.default()
@@ -357,21 +360,26 @@ class Notice:
                     if responce.status != 200:
                         return None
 
+                    # 대학 게시판은 '원하시는 페이지를 찾을 수가 없습니다',
+                    # 학과 게시판은 '게시물이(가) 없습니다.' 문구로 삭제된 글을 표시함
                     error_messages = [
                         "게시물에 접근할 수 없습니다",
                         "내용보기할 권한이 없습니다",
                         "존재하지 않는 게시물",
-                        "페이지를 찾을 수 없습니다"
+                        "페이지를 찾을 수 없습니다",
+                        "페이지를 찾을 수가 없습니다",
+                        "게시물이(가) 없습니다"
                     ]
 
                     for error_message in error_messages:
                         if error_message in html_info:
                             return False
 
-                    if notice["title"] in BeautifulSoup(html_info, "lxml").get_text(" ", strip=True):
-                        return True
+                    # 공지 번호는 짧은 숫자라 페이지 어디에나 포함될 수 있으므로 제목으로만 확인
+                    # 목록 제목과 같은 방식으로 공백(\xa0 포함)을 정규화한 뒤 비교
+                    page_text = re.sub(r"\s+", " ", BeautifulSoup(html_info, "lxml").get_text(" ", strip=True))
 
-                    if notice["number"] in html_info:
+                    if notice["title"] in page_text:
                         return True
 
                     return None
@@ -728,4 +736,8 @@ async def meal(ctx):
         )
 
     await ctx.send(info_msg)
-bot.run(token)
+
+
+# 테스트에서 모듈을 import할 때는 봇이 실행되지 않도록 직접 실행할 때만 봇을 가동
+if __name__ == "__main__":
+    bot.run(token)
